@@ -5,8 +5,15 @@ class RecipeFields {
   static const mealTime = "meal_time";
   static const weekday = "week_day";
   static const rating = "rating";
-  static const createdDateTime = "created_datetime";
-  static const lastModifiedDateTime = "last_modified_datetime";
+
+  static List<String> get columns => [
+    id,
+    name,
+    description,
+    mealTime,
+    weekday,
+    rating,
+  ];
 }
 
 class RecipeTable {
@@ -26,9 +33,7 @@ class RecipeTable {
           ${RecipeFields.mealTime} $intType,
           ${RecipeFields.weekday} $intType,
           ${RecipeFields.rating} $intType,
-          ${RecipeFields.createdDateTime} $dateTimeType,
-          ${RecipeFields.lastModifiedDateTime} $dateTimeType
-        ) STRICT;
+        ) ;
       """;
       default:
         assert(false, "Unimplemented create version: $version");

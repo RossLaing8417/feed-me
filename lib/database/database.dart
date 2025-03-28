@@ -4,6 +4,7 @@ import 'package:feedme/core/mealtime.dart';
 import 'package:feedme/core/weekday.dart';
 import 'package:feedme/database/models/ingredient.dart';
 import 'package:feedme/database/models/recipe.dart';
+import 'package:feedme/database/models/recipe_ingredient.dart';
 import 'package:feedme/database/schema/ingredient.dart';
 import 'package:feedme/database/schema/measurement.dart';
 import 'package:feedme/database/schema/recipe.dart';
@@ -13,12 +14,13 @@ import 'package:sqflite/sqflite.dart';
 
 class AppDatabase {
   static final instance = AppDatabase._instance();
-  static final name = "feedme.db";
+  static final name = "feed-me.db";
+  static final version = 1;
   static Database? _db;
 
   AppDatabase._instance();
 
-  Future<Database> get db async {
+  static Future<Database> get db async {
     if (_db != null) {
       return _db!;
     }
@@ -28,7 +30,12 @@ class AppDatabase {
 
   static Future<Database> _initDatabase() async {
     final path = join(await getDatabasesPath(), name);
-    // await deleteDatabase(path);
+    print("DB PATH: $path");
+    try {
+      await deleteDatabase(path);
+    } catch (e) {
+      print("Failed to delete db: $e");
+    }
     return openDatabase(
       path,
       version: 1,
@@ -39,9 +46,9 @@ class AppDatabase {
 
   static Future<void> _createDatabase(Database db, int version) async {
     return db.execute("""
-      ${RecipeTable.onCreate(version)}
       ${IngredientTable.onCreate(version)}
       ${MeasurementTable.onCreate(version)}
+      ${RecipeTable.onCreate(version)}
       ${RecipeIngredientTable.onCreate(version)}
     """);
   }
@@ -54,27 +61,28 @@ class AppDatabase {
     assert(newVersion > oldVersion, "New version must be greater than old version");
     for (var version = oldVersion + 1; oldVersion <= newVersion; version += 1) {
       await db.execute("""
-        ${RecipeTable.onUpgrade(version)}
         ${IngredientTable.onUpgrade(version)}
         ${MeasurementTable.onUpgrade(version)}
+        ${RecipeTable.onUpgrade(version)}
         ${RecipeIngredientTable.onUpgrade(version)}
       """);
     }
   }
 
   // >>> TEMP
-  static printSql(int version) {
+  static printSql() {
     final data = """
-      ${RecipeTable.onCreate(version)}
       ${IngredientTable.onCreate(version)}
       ${MeasurementTable.onCreate(version)}
+      ${RecipeTable.onCreate(version)}
       ${RecipeIngredientTable.onCreate(version)}
     """;
     print(data);
   }
 
-  static List<RecipeModel> recipes = [];
   static List<IngredientModel> ingredients = [];
+  static List<RecipeModel> recipes = [];
+  static List<RecipeIngredientModel> recipeIngredients = [];
 
   static int _id = 0;
   static int get _nextId {
@@ -83,49 +91,33 @@ class AppDatabase {
   }
   // <<< TEMP
 
-  static Future<RecipeModel> createRecipe({
-    required String name,
-    required String description,
-    required MealTime mealTime,
-    required Weekday weekday,
-    required int rating,
-  }) async {
-    final model = RecipeModel(
-      id: _nextId,
-      name: name,
-      description: description,
-      mealTime: mealTime,
-      weekday: weekday,
-      rating: rating,
-      createdDateTime: DateTime.now(),
-      lastModifiedDateTime: DateTime.now(),
+  // TODO: AND/OR grouping
+  static Future<List<Map<String, Object?>>> _fetchRecords(
+    String tableName,
+    [QueryOpts? queryOpts]
+  ) async {
+    final opts = queryOpts ?? QueryOpts();
+    final filterQuery = <String>[];
+    final filterValues = <Object>[];
+    for (final filter in opts.filtering) {
+      filterQuery.add("${filter.field} ${filter.operator} ?");
+      filterValues.add(filter.value);
+    }
+    final sortClause = opts.sorting.fold("", (value, element)
+      => "$value, ${element.field} ${element.ascending ? "ASC" : "DESC"}");
+    return (await db).query(
+      tableName,
+      where: filterQuery.fold("", (value, element) => "$value AND $element"),
+      whereArgs: filterValues,
+      orderBy: sortClause,
     );
-    recipes.add(model);
-    return recipes.firstWhere((element) => element.id == model.id);
   }
 
-  static Future<RecipeModel> updateRecipe({
-    required int id,
-    required String name,
-    required String description,
-    required MealTime mealTime,
-    required Weekday weekday,
-    required int rating,
-  }) async {
-    var model = recipes.firstWhere((element) => element.id == id);
-    recipes.remove(model);
-    model = RecipeModel(
-      id: model.id,
-      name: name,
-      description: description,
-      mealTime: mealTime,
-      weekday: weekday,
-      rating: rating,
-      createdDateTime: model.createdDateTime,
-      lastModifiedDateTime: DateTime.now(),
-    );
-    recipes.add(model);
-    return recipes.firstWhere((element) => element.id == model.id);
+  static Future<List<IngredientModel>> fetchIngredients(
+    [QueryOpts? queryOpts]
+  ) async {
+    final records = await _fetchRecords(IngredientTable.tableName, queryOpts);
+    return records.map((e) => IngredientModel.fromMap(e)).toList();
   }
 
   static Future<IngredientModel> createIngredient({
@@ -156,4 +148,147 @@ class AppDatabase {
     ingredients.add(model);
     return ingredients.firstWhere((element) => element.id == model.id);
   }
+
+  static Future<void> deleteIngredient({required int id}) async {
+    final model = ingredients.firstWhere((element) => element.id == id);
+    ingredients.remove(model);
+    return Future.value();
+  }
+
+  static Future<List<RecipeModel>> fetchRecipes(
+    [QueryOpts? queryOpts]
+  ) async {
+    final records = await _fetchRecords(RecipeTable.tableName, queryOpts);
+    return records.map((e) => RecipeModel.fromMap(e)).toList();
+  }
+
+  static Future<RecipeModel> createRecipe({
+    required String name,
+    required String description,
+    required MealTime mealTime,
+    required Weekday weekday,
+    required int rating,
+  }) async {
+    final model = RecipeModel(
+      id: _nextId,
+      name: name,
+      description: description,
+      mealTime: mealTime,
+      weekday: weekday,
+      rating: rating,
+    );
+    recipes.add(model);
+    return recipes.firstWhere((element) => element.id == model.id);
+  }
+
+  static Future<RecipeModel> updateRecipe({
+    required int id,
+    required String name,
+    required String description,
+    required MealTime mealTime,
+    required Weekday weekday,
+    required int rating,
+  }) async {
+    var model = recipes.firstWhere((element) => element.id == id);
+    recipes.remove(model);
+    model = RecipeModel(
+      id: model.id,
+      name: name,
+      description: description,
+      mealTime: mealTime,
+      weekday: weekday,
+      rating: rating,
+    );
+    recipes.add(model);
+    return recipes.firstWhere((element) => element.id == model.id);
+  }
+
+  static Future<void> deleteRecipes({required int id}) async {
+    final model = recipes.firstWhere((element) => element.id == id);
+    recipes.remove(model);
+    return Future.value();
+  }
+
+  static Future<List<RecipeIngredientModel>> fetchRecipeIngredients(
+      [QueryOpts? queryOpts]
+      ) async {
+    final records = await _fetchRecords(RecipeIngredientTable.tableName, queryOpts);
+    return records.map((e) => RecipeIngredientModel.fromMap(e)).toList();
+  }
+
+  static Future<RecipeIngredientModel> createRecipeIngredient({
+    required int recipeId,
+    required int ingredientId,
+    required int measurementId,
+    required String label,
+    required String description,
+    required double measurementValue,
+  }) async {
+    final model = RecipeIngredientModel(
+      id: _nextId,
+      recipeId: recipeId,
+      ingredientId: ingredientId,
+      measurementId: measurementId,
+      label: label,
+      description: description,
+      measurementValue: measurementValue,
+    );
+    recipeIngredients.add(model);
+    return recipeIngredients.firstWhere((element) => element.id == model.id);
+  }
+
+  static Future<RecipeIngredientModel> updateRecipeIngredient({
+    required int id,
+    required String label,
+    required String description,
+    required double measurementValue,
+  }) async {
+    var model = recipeIngredients.firstWhere((element) => element.id == id);
+    recipeIngredients.remove(model);
+    model = RecipeIngredientModel(
+      id: model.id,
+      recipeId: model.recipeId,
+      ingredientId: model.ingredientId,
+      measurementId: model.measurementId,
+      label: label,
+      description: description,
+      measurementValue: measurementValue,
+    );
+    recipeIngredients.add(model);
+    return recipeIngredients.firstWhere((element) => element.id == model.id);
+  }
+
+  static Future<void> deleteRecipeIngredients({required int id}) async {
+    final model = recipeIngredients.firstWhere((element) => element.id == id);
+    recipeIngredients.remove(model);
+    return Future.value();
+  }
+}
+
+class QueryOpts {
+  final List<FilterField> filtering;
+  final List<SortField> sorting;
+  QueryOpts({List<FilterField>? filtering, List<SortField>? sorting})
+    : filtering = filtering ?? [], sorting = sorting ?? [];
+}
+
+class FilterField {
+  final String field;
+  final String operator;
+  final Object value;
+  FilterField({required this.field, this.operator = "==", required this.value});
+
+  static final eq = "==";
+  static final ne = "!=";
+  static final gt = ">";
+  static final lt = "<";
+  static final ge = ">=";
+  static final le = "<=";
+  static final like = "LIKE";
+}
+
+class SortField {
+  final String field;
+  final bool ascending;
+  SortField({required this.field, this.ascending = true});
 }

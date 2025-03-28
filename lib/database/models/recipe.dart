@@ -12,8 +12,6 @@ class RecipeModel {
   // final String sourceType            string `gorm:"not null"`
   // final String sourceValue           string `gorm:"not null"`
   // final String frequency             uint8  `gorm:"not null"`
-  final DateTime? createdDateTime;
-  final DateTime? lastModifiedDateTime;
 
   const RecipeModel({
     this.id,
@@ -22,9 +20,16 @@ class RecipeModel {
     required this.mealTime,
     required this.weekday,
     this.rating = 0,
-    this.createdDateTime,
-    this.lastModifiedDateTime,
   });
+
+  factory RecipeModel.fromMap(Map<String, Object?> map) => RecipeModel(
+    id: map[RecipeFields.id] as int?,
+    name: map[RecipeFields.name] as String,
+    description: map[RecipeFields.description] as String,
+    mealTime: map[RecipeFields.mealTime] as MealTime,
+    weekday: Weekday.fromDay(map[RecipeFields.weekday] as int),
+    rating: map[RecipeFields.rating] as int,
+  );
 
   Map<String, Object?> toMap() {
     return {
@@ -34,8 +39,6 @@ class RecipeModel {
       RecipeFields.mealTime: mealTime,
       RecipeFields.weekday: weekday.toInt(),
       RecipeFields.rating: rating,
-      RecipeFields.createdDateTime: createdDateTime?.millisecondsSinceEpoch,
-      RecipeFields.lastModifiedDateTime: lastModifiedDateTime?.millisecondsSinceEpoch,
     };
   }
 }

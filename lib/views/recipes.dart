@@ -94,10 +94,10 @@ class RecipeResultCard extends StatelessWidget {
     return GestureDetector(
       onTap: () => viewRecipe(context),
       child: Padding(
-        padding: EdgeInsets.only(bottom: 10.0),
+        padding: EdgeInsets.only(bottom: 16.0),
         child: Card(
           child: Padding(
-            padding: EdgeInsets.all(6.0),
+            padding: EdgeInsets.all(8.0),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: <Widget>[
@@ -213,21 +213,21 @@ class _RecipeEditFormState extends State<RecipeEditForm> {
 
   saveChanges(context) async {
     final RecipeModel model = _isNew
-        ? await AppDatabase.createRecipe(
-      name: _name,
-      description: _description,
-      mealTime: MealTime.supper,
-      weekday: _weekday,
-      rating: _rating,
-    )
-    : await AppDatabase.updateRecipe(
-      id: widget.id!,
-      name: _name,
-      description: _description,
-      mealTime: MealTime.supper,
-      weekday: _weekday,
-      rating: _rating,
-    );
+      ? await AppDatabase.createRecipe(
+        name: _name,
+        description: _description,
+        mealTime: MealTime.supper,
+        weekday: _weekday,
+        rating: _rating,
+      )
+      : await AppDatabase.updateRecipe(
+        id: widget.id!,
+        name: _name,
+        description: _description,
+        mealTime: MealTime.supper,
+        weekday: _weekday,
+        rating: _rating,
+      );
     if (_isNew) {
       Navigator.pushReplacement(
           context,

@@ -4,8 +4,8 @@ import 'views/_layout.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  // final appDb = AppDatabase.init("feed_md.db", 1);
-  AppDatabase.printSql(1);
+  // AppDatabase.db;
+  AppDatabase.printSql();
   runApp(const MyApp());
 }
 

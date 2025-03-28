@@ -2,6 +2,12 @@ class IngredientFields {
   static const id = "id";
   static const name = "name";
   static const frequency = "frequency";
+
+  static List<String> get columns => [
+    id,
+    name,
+    frequency,
+  ];
 }
 
 class IngredientTable {
@@ -17,7 +23,7 @@ class IngredientTable {
           ${IngredientFields.id} $idType,
           ${IngredientFields.name} $textType,
           ${IngredientFields.frequency} $intType,
-        ) STRICT;
+        ) ;
       """;
       default:
         assert(false, "Unimplemented create version: $version");

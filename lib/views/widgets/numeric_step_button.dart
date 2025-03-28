@@ -1,13 +1,15 @@
 import 'package:flutter/material.dart';
 
 class NumericStepButton extends StatefulWidget {
+  final int? initialValue;
   final int minValue;
   final int maxValue;
 
   final ValueChanged<int>? onChanged;
 
-  NumericStepButton({
+  const NumericStepButton({
     super.key,
+    this.initialValue,
     required this.minValue,
     required this.maxValue,
     this.onChanged,
@@ -21,6 +23,12 @@ class _NumericStepButtonState extends State<NumericStepButton> {
   int counter = 0;
 
   @override
+  void initState() {
+    counter = widget.initialValue ?? 0;
+    super.initState();
+  }
+
+  @override
   Widget build(BuildContext context) {
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceAround,
@@ -28,7 +36,7 @@ class _NumericStepButtonState extends State<NumericStepButton> {
         IconButton(
           icon: Icon(
             Icons.remove,
-            // color: Theme.of(context).accentColor,
+            color: Theme.of(context).primaryIconTheme.color,
           ),
           padding: EdgeInsets.symmetric(vertical: 4.0, horizontal: 18.0),
           iconSize: 32.0,
@@ -46,7 +54,7 @@ class _NumericStepButtonState extends State<NumericStepButton> {
           '$counter',
           textAlign: TextAlign.center,
           style: TextStyle(
-            color: Colors.black87,
+            color: Theme.of(context).textTheme.bodyMedium?.color,
             fontSize: 18.0,
             fontWeight: FontWeight.w500,
           ),
@@ -54,7 +62,7 @@ class _NumericStepButtonState extends State<NumericStepButton> {
         IconButton(
           icon: Icon(
             Icons.add,
-            // color: Theme.of(context).accentColor,
+            color: Theme.of(context).primaryIconTheme.color,
           ),
           padding: EdgeInsets.symmetric(vertical: 4.0, horizontal: 18.0),
           iconSize: 32.0,
@@ -93,6 +101,7 @@ class NumericStepButtonFormField extends FormField<int> {
         if (label != null)
           Text(label, textAlign: TextAlign.left),
         NumericStepButton(
+          initialValue: field.value,
           minValue: minValue,
           maxValue: maxValue,
           onChanged: field.didChange,

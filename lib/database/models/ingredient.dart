@@ -11,6 +11,13 @@ class IngredientModel {
     required this.frequency,
   });
 
+  factory IngredientModel.fromMap(Map<String, Object?> map)
+    => IngredientModel(
+      id: map[IngredientFields.id] as int?,
+      name: map[IngredientFields.name] as String,
+      frequency: map[IngredientFields.frequency] as int,
+    );
+
   Map<String, Object?> toMap() {
     return {
       // IngredientFields.id: id,

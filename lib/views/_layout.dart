@@ -35,7 +35,7 @@ class _AppLayoutState extends State<AppLayout> {
             onSelected: (value) {
               switch(value) {
                 case 0: Navigator.push(
-                    context,
+                  context,
                     MaterialPageRoute(builder: (context) => IngredientsView())
                 );
               }
@@ -44,7 +44,7 @@ class _AppLayoutState extends State<AppLayout> {
               PopupMenuItem<int>(
                 value: 0,
                 child: Text("Ingredients"),
-              )
+              ),
             ],
           )
         ],

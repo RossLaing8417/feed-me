@@ -19,10 +19,6 @@ class _IngredientsViewState extends State<IngredientsView> {
   Timer? _searchDebounce;
   final _formKey = GlobalKey<FormState>();
 
-  int? _id = 0;
-  String _name = "";
-  int _frequency = 0;
-
   applyFilter(String filter) {
     if (_searchDebounce?.isActive ?? false) {
       _searchDebounce?.cancel();
@@ -31,6 +27,17 @@ class _IngredientsViewState extends State<IngredientsView> {
       setState(() {
         _ingredients = AppDatabase.ingredients.where((element)
           => element.name.toLowerCase().contains(filter)).toList();
+        _ingredients.sort((a, b) => a.name.toLowerCase().compareTo(b.name.toLowerCase()));
+        // AppDatabase.fetchIngredients(QueryOpts(
+        //   filtering:  [
+        //     FilterField(
+        //         field: IngredientFields.name,
+        //         operator: FilterField.like,
+        //         value: "%${filter.replaceAll(" ", "%")}%",
+        //     )
+        //   ],
+        //   sorting: [SortField(field: IngredientFields.name)],
+        // ));
       });
     });
   }
@@ -41,17 +48,23 @@ class _IngredientsViewState extends State<IngredientsView> {
     });
   }
 
-  saveIngredient() {
-    var future = _id == null
-      ? AppDatabase.createIngredient(name: _name, frequency: _frequency)
-      : AppDatabase.updateIngredient(id: _id!, name: _name, frequency: _frequency);
-    future.then((_) => search());
+  editIngredient([int? id]) async {
+    await Navigator.push(
+        context,
+        MaterialPageRoute(builder: (context) => IngredientEditView(id: id))
+    );
+    search();
+  }
+
+  deleteIngredient(int id) {
+    AppDatabase.deleteIngredient(id: id).then((_) => search());
   }
 
   @override
   void initState() {
     super.initState();
     _searchController.addListener(search);
+    search();
   }
 
   @override
@@ -86,35 +99,133 @@ class _IngredientsViewState extends State<IngredientsView> {
               child: Center(
                 child: _ingredients.isEmpty
                 ? Text("No ingredients found...")
-                : Placeholder(),
+                : ListView.builder(
+                  itemCount: _ingredients.length,
+                  itemBuilder: (context, index) => GestureDetector(
+                    onTap: () => editIngredient(_ingredients[index].id!),
+                    onLongPress: () => openDeleteDialog(_ingredients[index].id!),
+                    child: Expanded(child: Card(
+                      child: Padding(
+                        padding: EdgeInsets.all(8.0),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              _ingredients[index].name,
+                              style: Theme.of(context).textTheme.headlineMedium,
+                            ),
+                            Text(
+                              _ingredients[index].frequency.toString(),
+                              style: Theme.of(context).textTheme.bodyMedium,
+                            ),
+                          ],
+                        ),
+                      ),
+                    )),
+                  ),
+                ),
               ),
             ),
           ],
         ),
       ),
       floatingActionButton: FloatingActionButton(
-        onPressed: () => openDialog(),
+        onPressed: () => editIngredient(),
         tooltip: "Add ingredient",
         child: Icon(CupertinoIcons.add),
       )
     );
   }
 
-  Future openDialog([IngredientModel? ingredient]) {
-    _id = ingredient?.id;
+  Future openDeleteDialog(int id) {
     return showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        title: Text(ingredient?.name ?? "New Ingredient"),
-        content: Form(
+        title: Text("Are you sure you want to delete this ingredient?"),
+        actions: [
+          FilledButton(
+            onPressed: () {
+              deleteIngredient(id);
+              Navigator.of(context).pop();
+            },
+            child: Text("Delete"),
+          ),
+          TextButton(
+            onPressed: () {
+              Navigator.of(context).pop();
+            },
+            child: Text("Cancel"),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class IngredientEditView extends StatefulWidget {
+  final int? id;
+  const IngredientEditView({super.key, this.id});
+
+  @override
+  State<IngredientEditView> createState() => _IngredientEditViewState();
+}
+
+class _IngredientEditViewState extends State<IngredientEditView> {
+  var _isNew = false;
+  final _formKey = GlobalKey<FormState>();
+
+  String _name = "";
+  int _frequency = 0;
+
+  refresh() {
+    if (widget.id == null) {
+      setState(() {
+        _isNew = true;
+      });
+      return;
+    }
+    final model = AppDatabase.ingredients.firstWhere((element) => element.id == widget.id);
+    setState(() {
+      _isNew = false;
+      _name = model.name;
+      _frequency = model.frequency;
+    });
+  }
+
+  saveChanges(context) async {
+    final model = _isNew
+      ? await AppDatabase.createIngredient(
+        name: _name,
+        frequency: _frequency,
+      )
+      : await AppDatabase.updateIngredient(
+        id: widget.id!,
+        name: _name,
+        frequency: _frequency,
+      );
+    Navigator.pop(context);
+  }
+
+  @override
+  void initState() {
+    refresh();
+    super.initState();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(),
+      body: Padding(
+        padding: EdgeInsets.all(16.0),
+        child: Form(
           key: _formKey,
           child: Column(
             children: [
               TextFormField(
                 maxLength: 100,
-                autofocus: true,
                 decoration: InputDecoration(label: Text("Name")),
-                initialValue: ingredient?.name,
+                initialValue: _name,
                 validator: (value) {
                   if (value == null || value.isEmpty) {
                     return "Please provide a name";
@@ -127,7 +238,7 @@ class _IngredientsViewState extends State<IngredientsView> {
                 minValue: 0,
                 maxValue: 10,
                 label: "Frequency",
-                initialValue: ingredient?.frequency,
+                initialValue: _frequency,
                 validator: (value) {
                   if (value == null || value == 0) {
                     return "Please provide a frequency";
@@ -139,17 +250,16 @@ class _IngredientsViewState extends State<IngredientsView> {
             ],
           ),
         ),
-        actions: [
-          TextButton(
-            onPressed: () {
-              if (_formKey.currentState!.validate()) {
-                saveIngredient();
-                Navigator.of(context).pop();
-              }
-            },
-            child: Text("SUBMIT"),
-          ),
-        ],
+      ),
+      floatingActionButton: FloatingActionButton(
+        onPressed: () {
+          if (_formKey.currentState!.validate()) {
+            _formKey.currentState!.save();
+            saveChanges(context);
+          }
+        },
+        tooltip: "Save",
+        child: Icon(CupertinoIcons.checkmark_alt),
       ),
     );
   }

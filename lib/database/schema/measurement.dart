@@ -16,7 +16,7 @@ class MeasurementTable {
           ${MeasurementFields.id} $idType,
           ${MeasurementFields.label} $textType,
           ${MeasurementFields.description} $textType
-        ) STRICT;
+        ) ;
       """;
       default:
         assert(false, "Unimplemented create version: $version");
