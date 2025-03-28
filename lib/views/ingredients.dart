@@ -6,18 +6,17 @@ import 'package:feedme/views/widgets/numeric_step_button.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 
-class IngredientsView extends StatefulWidget {
-  const IngredientsView({super.key});
+class AppIngredientsView extends StatefulWidget {
+  const AppIngredientsView({super.key});
 
   @override
-  State<IngredientsView> createState() => _IngredientsViewState();
+  State<AppIngredientsView> createState() => _AppIngredientsViewState();
 }
 
-class _IngredientsViewState extends State<IngredientsView> {
+class _AppIngredientsViewState extends State<AppIngredientsView> {
   List<IngredientModel> _ingredients = [];
   final _searchController = TextEditingController();
   Timer? _searchDebounce;
-  final _formKey = GlobalKey<FormState>();
 
   applyFilter(String filter) {
     if (_searchDebounce?.isActive ?? false) {
@@ -51,7 +50,7 @@ class _IngredientsViewState extends State<IngredientsView> {
   editIngredient([int? id]) async {
     await Navigator.push(
         context,
-        MaterialPageRoute(builder: (context) => IngredientEditView(id: id))
+        MaterialPageRoute(builder: (context) => AppIngredientEditView(id: id))
     );
     search();
   }
@@ -105,21 +104,11 @@ class _IngredientsViewState extends State<IngredientsView> {
                     onTap: () => editIngredient(_ingredients[index].id!),
                     onLongPress: () => openDeleteDialog(_ingredients[index].id!),
                     child: Expanded(child: Card(
-                      child: Padding(
-                        padding: EdgeInsets.all(8.0),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              _ingredients[index].name,
-                              style: Theme.of(context).textTheme.headlineMedium,
-                            ),
-                            Text(
-                              _ingredients[index].frequency.toString(),
-                              style: Theme.of(context).textTheme.bodyMedium,
-                            ),
-                          ],
-                        ),
+                      child: ListTile(
+                        title: Text(_ingredients[index].name),
+                        titleTextStyle: Theme.of(context).textTheme.titleLarge,
+                        subtitle: Text(_ingredients[index].frequency.toString()),
+                        subtitleTextStyle: Theme.of(context).textTheme.titleSmall,
                       ),
                     )),
                   ),
@@ -162,15 +151,15 @@ class _IngredientsViewState extends State<IngredientsView> {
   }
 }
 
-class IngredientEditView extends StatefulWidget {
+class AppIngredientEditView extends StatefulWidget {
   final int? id;
-  const IngredientEditView({super.key, this.id});
+  const AppIngredientEditView({super.key, this.id});
 
   @override
-  State<IngredientEditView> createState() => _IngredientEditViewState();
+  State<AppIngredientEditView> createState() => _AppIngredientEditViewState();
 }
 
-class _IngredientEditViewState extends State<IngredientEditView> {
+class _AppIngredientEditViewState extends State<AppIngredientEditView> {
   var _isNew = false;
   final _formKey = GlobalKey<FormState>();
 
@@ -193,7 +182,7 @@ class _IngredientEditViewState extends State<IngredientEditView> {
   }
 
   saveChanges(context) async {
-    final model = _isNew
+    final _ = _isNew
       ? await AppDatabase.createIngredient(
         name: _name,
         frequency: _frequency,

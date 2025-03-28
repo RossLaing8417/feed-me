@@ -2,7 +2,7 @@ import 'package:feedme/core/mealtime.dart';
 import 'package:feedme/core/weekday.dart';
 import 'package:feedme/database/database.dart';
 import 'package:feedme/database/models/recipe.dart';
-import 'package:feedme/views/widgets/recipe_weekday.dart';
+import 'package:feedme/views/widgets/weekday_selector.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_rating/flutter_rating.dart';
@@ -31,7 +31,15 @@ class _AppRecipesViewState extends State<AppRecipesView> {
   addRecipe() async {
     await Navigator.push(
       context,
-      MaterialPageRoute(builder: (context) => RecipeEditForm()),
+      MaterialPageRoute(builder: (context) => AppRecipeEditView()),
+    );
+    filterRecipes();
+  }
+
+  viewRecipe(context, int id) async {
+    await Navigator.push(
+      context,
+      MaterialPageRoute(builder: (context) => AppRecipeView(id)),
     );
     filterRecipes();
   }
@@ -61,7 +69,13 @@ class _AppRecipesViewState extends State<AppRecipesView> {
           itemCount: _recipes.length,
           itemBuilder: (context, index) {
             final recipe = _recipes[index];
-            return RecipeResultCard(recipe, onUpdate: () => filterRecipes());
+            return Card(
+              child: ListTile(
+                onTap: () => viewRecipe(context, recipe.id!),
+                title: Text(recipe.name),
+                titleTextStyle: Theme.of(context).textTheme.headlineMedium,
+              ),
+            );
           },
         ),
       ),
@@ -74,56 +88,16 @@ class _AppRecipesViewState extends State<AppRecipesView> {
   }
 }
 
-class RecipeResultCard extends StatelessWidget {
-  final RecipeModel recipe;
-  final Function()? onUpdate;
-  const RecipeResultCard(this.recipe, {super.key, this.onUpdate});
-
-  viewRecipe(context) async {
-    await Navigator.push(
-      context,
-      MaterialPageRoute(builder: (context) => RecipeEditView(recipe.id!)),
-    );
-    if (onUpdate != null) {
-      onUpdate!();
-    }
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: () => viewRecipe(context),
-      child: Padding(
-        padding: EdgeInsets.only(bottom: 16.0),
-        child: Card(
-          child: Padding(
-            padding: EdgeInsets.all(8.0),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: <Widget>[
-                Text(
-                  recipe.name,
-                  style: Theme.of(context).textTheme.headlineMedium,
-                )
-              ],
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-class RecipeEditView extends StatefulWidget {
+class AppRecipeView extends StatefulWidget {
   final int id;
 
-  const RecipeEditView(this.id, {super.key});
+  const AppRecipeView(this.id, {super.key});
 
   @override
-  State<RecipeEditView> createState() => _RecipeEditViewState();
+  State<AppRecipeView> createState() => _AppRecipeViewState();
 }
 
-class _RecipeEditViewState extends State<RecipeEditView> {
+class _AppRecipeViewState extends State<AppRecipeView> {
   late RecipeModel _recipe;
 
   refresh() {
@@ -143,31 +117,67 @@ class _RecipeEditViewState extends State<RecipeEditView> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(),
-      body: Center(
-        child: Column(
-          children: [
-            Text(
-              _recipe.name,
-              style: Theme.of(context).textTheme.headlineLarge,
+      body: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Text(
+            _recipe.name,
+            style: Theme.of(context).textTheme.headlineLarge,
+          ),
+          Text(
+            _recipe.description,
+            style: Theme.of(context).textTheme.bodyLarge,
+          ),
+          Text(
+            _recipe.weekday.toString(),
+            style: Theme.of(context).textTheme.bodyMedium,
+          ),
+          StarRating(
+            rating: _recipe.rating.toDouble(),
+          ),
+          SizedBox(height: 32.0),
+          Padding(
+            padding: EdgeInsets.symmetric(horizontal: 32.0),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Text(
+                  "Ingredients",
+                  style: Theme.of(context).textTheme.headlineSmall,
+                ),
+                FilledButton(
+                  onPressed: () {},
+                  child: Icon(CupertinoIcons.add),
+                ),
+              ],
             ),
-            Text(
-              _recipe.description,
-              style: Theme.of(context).textTheme.bodyMedium,
+          ),
+          Expanded(
+            child: Padding(
+              padding: EdgeInsets.symmetric(horizontal: 16.0),
+              // child: Placeholder(),
+              child: ListView.builder(
+                scrollDirection: Axis.vertical,
+                shrinkWrap: true,
+                itemCount: 100,
+                itemBuilder: (context, index) {
+                  return Card(
+                    child: ListTile(
+                      title: Text("Noice"),
+                      titleTextStyle: Theme.of(context).textTheme.titleMedium,
+                    ),
+                  );
+                },
+              ),
             ),
-            Text(
-              _recipe.weekday.toString(),
-              style: Theme.of(context).textTheme.bodyMedium,
-            ),
-            StarRating(
-              rating: _recipe.rating.toDouble(),
-            )
-          ],
-        ),
+          ),
+          SizedBox(height: 64.0 + 16.0),
+        ],
       ),
       floatingActionButton: FloatingActionButton(
         onPressed: () => Navigator.push(
           context,
-          MaterialPageRoute(builder: (context) => RecipeEditForm(id: _recipe.id)),
+          MaterialPageRoute(builder: (context) => AppRecipeEditView(id: _recipe.id)),
         ).then((value) => refresh()),
         tooltip: "Edit",
         child: const Icon(CupertinoIcons.pencil),
@@ -176,16 +186,16 @@ class _RecipeEditViewState extends State<RecipeEditView> {
   }
 }
 
-class RecipeEditForm extends StatefulWidget {
+class AppRecipeEditView extends StatefulWidget {
   final int? id;
 
-  const RecipeEditForm({super.key, this.id});
+  const AppRecipeEditView({super.key, this.id});
 
   @override
-  State<RecipeEditForm> createState() => _RecipeEditFormState();
+  State<AppRecipeEditView> createState() => _AppRecipeEditViewState();
 }
 
-class _RecipeEditFormState extends State<RecipeEditForm> {
+class _AppRecipeEditViewState extends State<AppRecipeEditView> {
   bool _isNew = false;
   final _formKey = GlobalKey<FormState>();
 
@@ -231,7 +241,7 @@ class _RecipeEditFormState extends State<RecipeEditForm> {
     if (_isNew) {
       Navigator.pushReplacement(
           context,
-          MaterialPageRoute(builder: (builder) => RecipeEditView(model.id!))
+          MaterialPageRoute(builder: (builder) => AppRecipeView(model.id!))
       );
     } else {
       Navigator.pop(context);

@@ -36,7 +36,7 @@ class _AppLayoutState extends State<AppLayout> {
               switch(value) {
                 case 0: Navigator.push(
                   context,
-                    MaterialPageRoute(builder: (context) => IngredientsView())
+                    MaterialPageRoute(builder: (context) => AppIngredientsView())
                 );
               }
             },
