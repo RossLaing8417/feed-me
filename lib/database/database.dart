@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:feedme/core/mealtime.dart';
 import 'package:feedme/core/weekday.dart';
 import 'package:feedme/database/models/ingredient.dart';
+import 'package:feedme/database/models/measurement.dart';
 import 'package:feedme/database/models/recipe.dart';
 import 'package:feedme/database/models/recipe_ingredient.dart';
 import 'package:feedme/database/schema/ingredient.dart';
@@ -81,6 +82,7 @@ class AppDatabase {
   }
 
   static List<IngredientModel> ingredients = [];
+  static List<MeasurementModel> measurements = [];
   static List<RecipeModel> recipes = [];
   static List<RecipeIngredientModel> recipeIngredients = [];
 
@@ -114,8 +116,8 @@ class AppDatabase {
   }
 
   static Future<List<IngredientModel>> fetchIngredients(
-    [QueryOpts? queryOpts]
-  ) async {
+      [QueryOpts? queryOpts]
+      ) async {
     final records = await _fetchRecords(IngredientTable.tableName, queryOpts);
     return records.map((e) => IngredientModel.fromMap(e)).toList();
   }
@@ -152,6 +154,48 @@ class AppDatabase {
   static Future<void> deleteIngredient({required int id}) async {
     final model = ingredients.firstWhere((element) => element.id == id);
     ingredients.remove(model);
+    return Future.value();
+  }
+
+  static Future<List<MeasurementModel>> fetchMeasurements(
+    [QueryOpts? queryOpts]
+  ) async {
+    final records = await _fetchRecords(MeasurementTable.tableName, queryOpts);
+    return records.map((e) => MeasurementModel.fromMap(e)).toList();
+  }
+
+  static Future<MeasurementModel> createMeasurement({
+    required String label,
+    required String description,
+  }) async {
+    var model = MeasurementModel(
+      id: _nextId,
+      label: label,
+      description: description,
+    );
+    measurements.add(model);
+    return measurements.firstWhere((element) => element.id == model.id);
+  }
+
+  static Future<MeasurementModel> updateMeasurement({
+    required int id,
+    required String label,
+    required String description,
+  }) async {
+    var model = measurements.firstWhere((element) => element.id == id);
+    measurements.remove(model);
+    model = MeasurementModel(
+      id: model.id,
+      label: label,
+      description: description,
+    );
+    measurements.add(model);
+    return measurements.firstWhere((element) => element.id == model.id);
+  }
+
+  static Future<void> deleteMeasurement({required int id}) async {
+    final model = measurements.firstWhere((element) => element.id == id);
+    measurements.remove(model);
     return Future.value();
   }
 
@@ -219,18 +263,18 @@ class AppDatabase {
   static Future<RecipeIngredientModel> createRecipeIngredient({
     required int recipeId,
     required int ingredientId,
-    required int measurementId,
     required String label,
     required String description,
+    required int measurementId,
     required double measurementValue,
   }) async {
     final model = RecipeIngredientModel(
       id: _nextId,
       recipeId: recipeId,
       ingredientId: ingredientId,
-      measurementId: measurementId,
       label: label,
       description: description,
+      measurementId: measurementId,
       measurementValue: measurementValue,
     );
     recipeIngredients.add(model);

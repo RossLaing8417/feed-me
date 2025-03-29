@@ -6,18 +6,18 @@ class RecipeIngredientFields {
   static const id = "id";
   static const recipeId = "recipe_id";
   static const ingredientId = "ingredient_id";
-  static const measurementId = "measurement_id";
   static const label = "label";
   static const description = "description";
+  static const measurementId = "measurement_id";
   static const measurementValue = "measurementValue";
 
   static const columns = [
     id,
     recipeId,
     ingredientId,
-    measurementId,
     label,
     description,
+    measurementId,
     measurementValue,
   ];
 }
@@ -36,9 +36,9 @@ class RecipeIngredientTable {
           ${RecipeIngredientFields.id} $idType,
           ${RecipeIngredientFields.recipeId} $intType,
           ${RecipeIngredientFields.ingredientId} $intType,
-          ${RecipeIngredientFields.measurementId} $textType,
           ${RecipeIngredientFields.label} $textType,
           ${RecipeIngredientFields.description} $textType,
+          ${RecipeIngredientFields.measurementId} $textType,
           ${RecipeIngredientFields.measurementValue} $doubleType CHECK(${RecipeIngredientFields.measurementValue} >= 0.0),
           CONSTRAINT fk_${RecipeIngredientFields.recipeId     } FOREIGN KEY (${RecipeIngredientFields.recipeId     }) REFERENCES ${RecipeTable.tableName     } (${RecipeFields.id     }) ON DELETE RESTRICT,
           CONSTRAINT fk_${RecipeIngredientFields.ingredientId } FOREIGN KEY (${RecipeIngredientFields.ingredientId }) REFERENCES ${IngredientTable.tableName } (${IngredientFields.id }) ON DELETE RESTRICT,

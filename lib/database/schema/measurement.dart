@@ -6,7 +6,7 @@ class MeasurementFields {
 
 class MeasurementTable {
   static const tableName = "measurements";
-  static const idType = "TEXT UNIQUE PRIMARY KEY NOT NULL";
+  static const idType = "INTEGER UNIQUE PRIMARY KEY NOT NULL";
   static const textType = "TEXT NOT NULL";
 
   static String onCreate(int version) {
