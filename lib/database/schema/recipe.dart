@@ -30,7 +30,7 @@ class RecipeFields {
 }
 
 class RecipeTable {
-  static const tableName = "recipes";
+  static const name = "recipes";
   static const idType = "INTEGER UNIQUE PRIMARY KEY AUTOINCREMENT NOT NULL";
   static const textType = "TEXT NOT NULL";
   static const intType = "INTEGER NOT NULL";
@@ -39,13 +39,15 @@ class RecipeTable {
   static String onCreate(int version) {
     switch(version) {
       case 1: return """
-        CREATE TABLE $tableName (
-          ${RecipeFields.id} $idType,
-          ${RecipeFields.name} $textType,
-          ${RecipeFields.description} $textType,
-          ${RecipeFields.mealTime} $intType,
-          ${RecipeFields.weekday} $intType,
-          ${RecipeFields.rating} $intType,
+        CREATE TABLE $name (
+          ${RecipeFields.id} $idType
+        , ${RecipeFields.name} $textType
+        , ${RecipeFields.description} $textType
+        , ${RecipeFields.cookingTime} $textType
+        , ${RecipeFields.mealTime} $intType
+        , ${RecipeFields.weekday} $intType
+        , ${RecipeFields.rating} $intType
+        , ${RecipeFields.frequency} $intType
         ) ;
       """;
       default:

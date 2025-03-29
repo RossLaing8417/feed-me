@@ -1,9 +1,11 @@
+import 'package:feedme/database/database.dart';
 import 'package:feedme/views/home.dart';
 import 'package:feedme/views/ingredients.dart';
 import 'package:feedme/views/meal_planner.dart';
 import 'package:feedme/views/measurements.dart';
 import 'package:feedme/views/recipes.dart';
 import 'package:flutter/cupertino.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 
 class AppLayout extends StatefulWidget {
@@ -43,6 +45,9 @@ class _AppLayoutState extends State<AppLayout> {
                   context,
                     MaterialPageRoute(builder: (context) => AppMeasurementsView())
                 );
+                case 99: setState(() {
+                  AppDatabase.reset();
+                });
               }
             },
             itemBuilder: (context) => [
@@ -54,6 +59,11 @@ class _AppLayoutState extends State<AppLayout> {
                 value: 1,
                 child: Text("Measurements"),
               ),
+              if (kDebugMode)
+                PopupMenuItem<int>(
+                  value: 99,
+                  child: Text("Reset"),
+                ),
             ],
           )
         ],

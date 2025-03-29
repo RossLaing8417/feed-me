@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:dropdown_search/dropdown_search.dart';
 import 'package:feedme/core/mealtime.dart';
 import 'package:feedme/core/weekday.dart';
@@ -6,6 +8,8 @@ import 'package:feedme/database/models/ingredient.dart';
 import 'package:feedme/database/models/measurement.dart';
 import 'package:feedme/database/models/recipe.dart';
 import 'package:feedme/database/models/recipe_ingredient.dart';
+import 'package:feedme/database/schema/recipe.dart';
+import 'package:feedme/database/schema/recipe_ingredient.dart';
 import 'package:feedme/views/ingredients.dart';
 import 'package:feedme/views/measurements.dart';
 import 'package:feedme/views/widgets/numeric_step_button.dart';
@@ -25,17 +29,33 @@ class AppRecipesView extends StatefulWidget {
 class _AppRecipesViewState extends State<AppRecipesView> {
   List<RecipeModel> _recipes = [];
   final _searchController = TextEditingController();
+  Timer? _searchDebounce;
 
-  filterRecipes(String filter) {
-    setState(() {
-      _recipes = AppDatabase.recipes.where((element)
-        => element.name.contains(filter)).toList();
-      _recipes.sort((a,b)
-        => a.name.toLowerCase().compareTo(b.name.toLowerCase()));
+  applyFilter(String filter) {
+    if (_searchDebounce?.isActive ?? false) {
+      _searchDebounce?.cancel();
+    }
+    _searchDebounce = Timer(Duration(milliseconds: 200), () async {
+      _recipes = await AppDatabase.fetchRecipes(QueryOpts(
+        filtering: [
+          if (filter.isNotEmpty)
+            FilterField(
+              field: RecipeFields.name,
+              operator: FilterField.like,
+              value: "%${filter.replaceAll(" ", "%")}%",
+            ),
+        ],
+        sorting: [SortField(field: RecipeFields.name)],
+      ));
+      setState(() {
+        _recipes.sort((a,b)
+          => a.name.toLowerCase().compareTo(b.name.toLowerCase()));
+        _searchDebounce = null;
+      });
     });
   }
 
-  search() => filterRecipes(_searchController.text);
+  search() => applyFilter(_searchController.text);
 
   addRecipe() async {
     await Navigator.push(
@@ -138,17 +158,20 @@ class AppRecipeView extends StatefulWidget {
 class _AppRecipeViewState extends State<AppRecipeView> {
   late RecipeModel _recipe;
   List<RecipeIngredientModel> _ingredients = [];
+  List<MeasurementModel> _measurements = [];
 
-  refresh() {
-    final model = AppDatabase.recipes.firstWhere((element)
-      => element.id == widget.id);
-    final ingredients = AppDatabase.recipeIngredients.where((element)
-      => element.recipeId == widget.id).toList();
+  refresh() async {
+    final model = await AppDatabase.getRecipeById(widget.id);
+    final ingredients = await AppDatabase.fetchRecipeIngredients(QueryOpts(
+      filtering: [
+        FilterField(field: RecipeIngredientFields.recipeId, value: widget.id)
+      ],
+    ));
+    final measurements = await AppDatabase.fetchMeasurements();
     setState(() {
       _recipe = model;
       _ingredients = ingredients;
-      _ingredients.sort((a, b) =>
-          a.label.toString().compareTo(b.label.toLowerCase()));
+      _measurements = measurements;
     });
   }
 
@@ -229,7 +252,7 @@ class _AppRecipeViewState extends State<AppRecipeView> {
                 itemCount: _ingredients.length,
                 itemBuilder: (context, index) {
                   final ingredient = _ingredients[index];
-                  final measurement = AppDatabase.measurements.firstWhere((element)
+                  final measurement = _measurements.firstWhere((element)
                     => element.id == ingredient.measurementId);
                   return Card(
                     child: ListTile(
@@ -305,14 +328,14 @@ class _AppRecipeEditViewState extends State<AppRecipeEditView> {
   int _rating = 0;
   int _frequency = 0;
 
-  refresh() {
+  refresh() async {
     if (widget.id == null) {
       setState(() {
         _isNew = true;
       });
       return;
     }
-    final model = AppDatabase.recipes.firstWhere((element) => element.id == widget.id!);
+    final model = await AppDatabase.getRecipeById(widget.id!);
     setState(() {
       _isNew = false;
       _name = model.name;
@@ -492,19 +515,21 @@ class _AppRecipeIngredientEditViewState extends State<AppRecipeIngredientEditVie
   MeasurementModel? _measurement;
   String _measurementValue = "";
 
-  refresh() {
+  refresh() async {
     if (widget.id == null) {
       setState(() {
         _isNew = true;
       });
       return;
     }
-    final model = AppDatabase.recipeIngredients.firstWhere((element) => element.id == widget.id);
+    final model = await AppDatabase.getRecipeIngredientById(widget.id!);
+    final ingredient = await AppDatabase.getIngredientById(model.ingredientId);
+    final measurement = await AppDatabase.getMeasurementById(model.measurementId);
     setState(() {
-      _ingredient = AppDatabase.ingredients.firstWhere((element) => element.id == model.ingredientId);
+      _ingredient = ingredient;
       _label = model.label;
       _description = model.description;
-      _measurement = AppDatabase.measurements.firstWhere((element) => element.id == model.measurementId);
+      _measurement = measurement;
       _measurementValue = model.measurementValue.toString();
     });
   }
@@ -577,7 +602,7 @@ class _AppRecipeIngredientEditViewState extends State<AppRecipeIngredientEditVie
                   child: _isNew
                   // TODO: Search
                   ? DropdownSearch<IngredientModel>(
-                    items: (filter, loadProps) => AppDatabase.ingredients,
+                    items: (filter, loadProps) => AppDatabase.fetchIngredients(),
                     selectedItem: _ingredient,
                     compareFn: (item1, item2) => item1.id! == item2.id!,
                     itemAsString: (item) => item.name,
@@ -627,7 +652,7 @@ class _AppRecipeIngredientEditViewState extends State<AppRecipeIngredientEditVie
                   child: _isNew
                   // TODO: Search
                   ? DropdownSearch<MeasurementModel>(
-                    items: (filter, loadProps) => AppDatabase.measurements,
+                    items: (filter, loadProps) => AppDatabase.fetchMeasurements(),
                     selectedItem: _measurement,
                     compareFn: (item1, item2) => item1.id! == item2.id!,
                     itemAsString: (item) => item.label,

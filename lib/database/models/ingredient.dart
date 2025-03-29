@@ -20,7 +20,6 @@ class IngredientModel {
 
   Map<String, Object?> toMap() {
     return {
-      // IngredientFields.id: id,
       IngredientFields.name: name,
       IngredientFields.frequency: frequency,
     };

@@ -19,7 +19,6 @@ class MeasurementModel {
 
   Map<String, Object?> toMap() {
     return {
-      // MeasurementFields.id: id,
       MeasurementFields.label: label,
       MeasurementFields.description: description,
     };

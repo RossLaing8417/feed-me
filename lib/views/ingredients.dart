@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:feedme/database/database.dart';
 import 'package:feedme/database/models/ingredient.dart';
+import 'package:feedme/database/schema/ingredient.dart';
 import 'package:feedme/views/widgets/numeric_step_button.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
@@ -23,21 +24,20 @@ class _AppIngredientsViewState extends State<AppIngredientsView> {
     if (_searchDebounce?.isActive ?? false) {
       _searchDebounce?.cancel();
     }
-    _searchDebounce = Timer(Duration(milliseconds: 200), () {
+    _searchDebounce = Timer(Duration(milliseconds: 200), () async {
+      final ingredients = await AppDatabase.fetchIngredients(QueryOpts(
+        filtering:  [
+          if (filter.isNotEmpty)
+            FilterField(
+              field: IngredientFields.name,
+              operator: FilterField.like,
+              value: "%${filter.replaceAll(" ", "%")}%",
+            ),
+        ],
+        sorting: [SortField(field: IngredientFields.name)],
+      ));
       setState(() {
-        _ingredients = AppDatabase.ingredients.where((element)
-          => element.name.toLowerCase().contains(filter)).toList();
-        _ingredients.sort((a, b) => a.name.toLowerCase().compareTo(b.name.toLowerCase()));
-        // AppDatabase.fetchIngredients(QueryOpts(
-        //   filtering:  [
-        //     FilterField(
-        //         field: IngredientFields.name,
-        //         operator: FilterField.like,
-        //         value: "%${filter.replaceAll(" ", "%")}%",
-        //     )
-        //   ],
-        //   sorting: [SortField(field: IngredientFields.name)],
-        // ));
+        _ingredients = ingredients;
         _searchDebounce = null;
       });
     });
@@ -54,7 +54,7 @@ class _AppIngredientsViewState extends State<AppIngredientsView> {
   }
 
   deleteIngredient(int id) async {
-    await AppDatabase.deleteIngredient(id: id);
+    await AppDatabase.deleteIngredient(id);
     search();
   }
 
@@ -164,14 +164,14 @@ class _AppIngredientEditViewState extends State<AppIngredientEditView> {
   String _name = "";
   int _frequency = 0;
 
-  refresh() {
+  refresh() async {
     if (widget.id == null) {
       setState(() {
         _isNew = true;
       });
       return;
     }
-    final model = AppDatabase.ingredients.firstWhere((element) => element.id == widget.id);
+    final model = await AppDatabase.getIngredientById(widget.id!);
     setState(() {
       _isNew = false;
       _name = model.name;

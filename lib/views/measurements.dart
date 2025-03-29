@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:feedme/database/database.dart';
 import 'package:feedme/database/models/measurement.dart';
+import 'package:feedme/database/schema/measurement.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 
@@ -22,22 +23,20 @@ class _AppMeasurementsViewState extends State<AppMeasurementsView> {
     if (_searchDebounce?.isActive ?? false) {
       _searchDebounce?.cancel();
     }
-    _searchDebounce = Timer(Duration(milliseconds: 200), () {
+    _searchDebounce = Timer(Duration(milliseconds: 200), () async {
+      final measurements = await AppDatabase.fetchMeasurements(QueryOpts(
+        filtering: [
+          if (filter.isNotEmpty)
+            FilterField(
+                field: MeasurementFields.label,
+                operator: FilterField.like,
+                value: "%${filter.replaceAll(" ", "%")}%"
+            ),
+        ],
+        sorting: [SortField(field: MeasurementFields.label)],
+      ));
       setState(() {
-        _measurements = AppDatabase.measurements.where((element)
-          => element.label.toLowerCase().contains(filter.toLowerCase())).toList();
-        _measurements.sort((a, b)
-          => a.label.toLowerCase().compareTo(b.label.toLowerCase()));
-        // AppDatabase.fetchMeasurements(QueryOpts(
-        //   filtering:  [
-        //     FilterField(
-        //         field: MeasurementFields.label,
-        //         operator: FilterField.like,
-        //         value: "%${filter.replaceAll(" ", "%")}%",
-        //     )
-        //   ],
-        //   sorting: [SortField(field: MeasurementFields.name)],
-        // ));
+        _measurements = measurements;
         _searchDebounce = null;
       });
     });
@@ -54,7 +53,7 @@ class _AppMeasurementsViewState extends State<AppMeasurementsView> {
   }
 
   deleteMeasurement(int id) async {
-    await AppDatabase.deleteMeasurement(id: id);
+    await AppDatabase.deleteMeasurement(id);
     search();
   }
 
@@ -164,14 +163,14 @@ class _AppMeasurementEditViewState extends State<AppMeasurementEditView> {
   String _label = "";
   String _description = "";
 
-  refresh() {
+  refresh () async {
     if (widget.id == null) {
       setState(() {
         _isNew = true;
       });
       return;
     }
-    final model = AppDatabase.measurements.firstWhere((element) => element.id == widget.id);
+    final model = await AppDatabase.getMeasurementById(widget.id!);
     setState(() {
       _label = model.label;
       _description = model.description;

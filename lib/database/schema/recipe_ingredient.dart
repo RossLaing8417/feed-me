@@ -30,7 +30,7 @@ class RecipeIngredientFields {
 }
 
 class RecipeIngredientTable {
-  static const tableName = "recipe_ingredients";
+  static const name = "recipe_ingredients";
   static const idType = "INTEGER UNIQUE PRIMARY KEY AUTOINCREMENT NOT NULL";
   static const intType = "INTEGER NOT NULL";
   static const textType = "TEXT NOT NULL";
@@ -39,17 +39,17 @@ class RecipeIngredientTable {
   static String onCreate(int version) {
     switch (version) {
       case 1: return """
-        CREATE TABLE $tableName (
-          ${RecipeIngredientFields.id} $idType,
-          ${RecipeIngredientFields.recipeId} $intType,
-          ${RecipeIngredientFields.ingredientId} $intType,
-          ${RecipeIngredientFields.label} $textType,
-          ${RecipeIngredientFields.description} $textType,
-          ${RecipeIngredientFields.measurementId} $textType,
-          ${RecipeIngredientFields.measurementValue} $doubleType CHECK(${RecipeIngredientFields.measurementValue} >= 0.0),
-          CONSTRAINT fk_${RecipeIngredientFields.recipeId     } FOREIGN KEY (${RecipeIngredientFields.recipeId     }) REFERENCES ${RecipeTable.tableName     } (${RecipeFields.id     }) ON DELETE RESTRICT,
-          CONSTRAINT fk_${RecipeIngredientFields.ingredientId } FOREIGN KEY (${RecipeIngredientFields.ingredientId }) REFERENCES ${IngredientTable.tableName } (${IngredientFields.id }) ON DELETE RESTRICT,
-          CONSTRAINT fk_${RecipeIngredientFields.measurementId} FOREIGN KEY (${RecipeIngredientFields.measurementId}) REFERENCES ${MeasurementTable.tableName} (${MeasurementFields.id}) ON DELETE RESTRICT
+        CREATE TABLE $name (
+          ${RecipeIngredientFields.id} $idType
+        , ${RecipeIngredientFields.recipeId} $intType
+        , ${RecipeIngredientFields.ingredientId} $intType
+        , ${RecipeIngredientFields.label} $textType
+        , ${RecipeIngredientFields.description} $textType
+        , ${RecipeIngredientFields.measurementId} $textType
+        , ${RecipeIngredientFields.measurementValue} $doubleType CHECK(${RecipeIngredientFields.measurementValue} >= 0.0)
+        , CONSTRAINT fk_${RecipeIngredientFields.recipeId     } FOREIGN KEY (${RecipeIngredientFields.recipeId     }) REFERENCES ${RecipeTable.name     } (${RecipeFields.id     }) ON DELETE RESTRICT
+        , CONSTRAINT fk_${RecipeIngredientFields.ingredientId } FOREIGN KEY (${RecipeIngredientFields.ingredientId }) REFERENCES ${IngredientTable.name } (${IngredientFields.id }) ON DELETE RESTRICT
+        , CONSTRAINT fk_${RecipeIngredientFields.measurementId} FOREIGN KEY (${RecipeIngredientFields.measurementId}) REFERENCES ${MeasurementTable.name} (${MeasurementFields.id}) ON DELETE RESTRICT
         ) ;
       """;
       default:

@@ -28,19 +28,18 @@ class RecipeModel {
     name: map[RecipeFields.name] as String,
     description: map[RecipeFields.description] as String,
     cookingTime: map[RecipeFields.cookingTime] as String,
-    mealTime: map[RecipeFields.mealTime] as MealTime,
-    weekday: Weekday.fromDay(map[RecipeFields.weekday] as int),
+    mealTime: MealTime.values[map[RecipeFields.mealTime] as int],
+    weekday: Weekday.fromInt(map[RecipeFields.weekday] as int),
     rating: map[RecipeFields.rating] as int,
     frequency: map[RecipeFields.frequency] as int,
   );
 
   Map<String, Object?> toMap() {
     return {
-      // RecipeFields.id: id,
       RecipeFields.name: name,
       RecipeFields.description: description,
       RecipeFields.cookingTime: cookingTime,
-      RecipeFields.mealTime: mealTime,
+      RecipeFields.mealTime: mealTime.index,
       RecipeFields.weekday: weekday.toInt(),
       RecipeFields.rating: rating,
       RecipeFields.frequency: frequency,

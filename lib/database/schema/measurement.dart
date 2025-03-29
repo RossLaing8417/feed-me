@@ -8,17 +8,17 @@ class MeasurementFields {
 }
 
 class MeasurementTable {
-  static const tableName = "measurements";
+  static const name = "measurements";
   static const idType = "INTEGER UNIQUE PRIMARY KEY NOT NULL";
   static const textType = "TEXT NOT NULL";
 
   static String onCreate(int version) {
     switch (version) {
       case 1: return """
-        CREATE TABLE $tableName (
-          ${MeasurementFields.id} $idType,
-          ${MeasurementFields.label} $textType,
-          ${MeasurementFields.description} $textType
+        CREATE TABLE $name (
+          ${MeasurementFields.id} $idType
+        , ${MeasurementFields.label} $textType
+        , ${MeasurementFields.description} $textType
         ) ;
       """;
       default:

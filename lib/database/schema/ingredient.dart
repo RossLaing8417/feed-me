@@ -15,7 +15,7 @@ class IngredientFields {
 }
 
 class IngredientTable {
-  static const tableName = "ingredients";
+  static const name = "ingredients";
   static const idType = "INTEGER UNIQUE PRIMARY KEY AUTOINCREMENT NOT NULL";
   static const textType = "TEXT NOT NULL";
   static const intType = "INTEGER NOT NULL";
@@ -23,10 +23,10 @@ class IngredientTable {
   static String onCreate(int version) {
     switch (version) {
       case 1: return """
-        CREATE TABLE $tableName (
-          ${IngredientFields.id} $idType,
-          ${IngredientFields.name} $textType,
-          ${IngredientFields.frequency} $intType,
+        CREATE TABLE $name (
+          ${IngredientFields.id} $idType
+        , ${IngredientFields.name} $textType
+        , ${IngredientFields.frequency} $intType
         ) ;
       """;
       default:

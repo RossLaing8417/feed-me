@@ -19,39 +19,40 @@ class AppDatabase {
   static final version = 1;
   static Database? _db;
 
+  static get dbPath async => join(await getDatabasesPath(), name);
+
   AppDatabase._instance();
 
   static Future<Database> get db async {
     if (_db != null) {
       return _db!;
     }
-    _db = await _initDatabase();
+    await initDatabase();
     return _db!;
   }
 
-  static Future<Database> _initDatabase() async {
-    final path = join(await getDatabasesPath(), name);
-    print("DB PATH: $path");
-    try {
-      await deleteDatabase(path);
-    } catch (e) {
-      print("Failed to delete db: $e");
-    }
-    return openDatabase(
-      path,
+  static initDatabase() async {
+    assert(_db == null, "Database already initialized");
+    _db = _db ?? await openDatabase(
+      await dbPath,
       version: 1,
       onCreate: _createDatabase,
       onUpgrade: _upgradeDatabase,
     );
   }
 
-  static Future<void> _createDatabase(Database db, int version) async {
-    return db.execute("""
-      ${IngredientTable.onCreate(version)}
-      ${MeasurementTable.onCreate(version)}
-      ${RecipeTable.onCreate(version)}
-      ${RecipeIngredientTable.onCreate(version)}
-    """);
+  static Future _createDatabase(Database db, int version) async {
+    // final sql = """
+    //   ${IngredientTable.onCreate(version)}
+    //   ${MeasurementTable.onCreate(version)}
+    //   ${RecipeTable.onCreate(version)}
+    //   ${RecipeIngredientTable.onCreate(version)}
+    // """;
+    // await db.execute(sql);
+    await db.execute(IngredientTable.onCreate(version));
+    await db.execute(MeasurementTable.onCreate(version));
+    await db.execute(RecipeTable.onCreate(version));
+    await db.execute(RecipeIngredientTable.onCreate(version));
   }
 
   static Future<void> _upgradeDatabase(
@@ -61,41 +62,30 @@ class AppDatabase {
   ) async {
     assert(newVersion > oldVersion, "New version must be greater than old version");
     for (var version = oldVersion + 1; oldVersion <= newVersion; version += 1) {
-      await db.execute("""
+      final sql = """
         ${IngredientTable.onUpgrade(version)}
         ${MeasurementTable.onUpgrade(version)}
         ${RecipeTable.onUpgrade(version)}
         ${RecipeIngredientTable.onUpgrade(version)}
-      """);
+      """;
+      await db.execute(sql);
     }
   }
 
   // >>> TEMP
-  static printSql() {
-    final data = """
-      ${IngredientTable.onCreate(version)}
-      ${MeasurementTable.onCreate(version)}
-      ${RecipeTable.onCreate(version)}
-      ${RecipeIngredientTable.onCreate(version)}
-    """;
-    print(data);
-  }
-
-  static List<IngredientModel> ingredients = [];
-  static List<MeasurementModel> measurements = [];
-  static List<RecipeModel> recipes = [];
-  static List<RecipeIngredientModel> recipeIngredients = [];
-
-  static int _id = 0;
-  static int get _nextId {
-    _id += 1;
-    return _id;
+  static reset() async {
+    if (_db != null) {
+      await _db!.close();
+      await deleteDatabase(await dbPath);
+      _db = null;
+    }
+    initDatabase();
   }
   // <<< TEMP
 
   // TODO: AND/OR grouping
   static Future<List<Map<String, Object?>>> _fetchRecords(
-    String tableName,
+    String table,
     [QueryOpts? queryOpts]
   ) async {
     final opts = queryOpts ?? QueryOpts();
@@ -106,20 +96,59 @@ class AppDatabase {
       filterValues.add(filter.value);
     }
     final sortClause = opts.sorting.fold("", (value, element)
-      => "$value, ${element.field} ${element.ascending ? "ASC" : "DESC"}");
+      => "${value.isEmpty ? "" : ", "}${element.field} ${element.ascending ? "ASC" : "DESC"}");
+    final where = filterQuery.isEmpty ? null : filterQuery.fold("", (value, element)
+      => "${value.isEmpty ? "" : " AND "} $element");
+    final whereArgs = filterValues.isEmpty ? null : filterValues;
+    final orderBy = sortClause.isEmpty ? null : sortClause;
     return (await db).query(
-      tableName,
-      where: filterQuery.fold("", (value, element) => "$value AND $element"),
-      whereArgs: filterValues,
-      orderBy: sortClause,
+      table,
+      where: where,
+      whereArgs: whereArgs,
+      orderBy: orderBy,
     );
+  }
+
+  static Future<Map<String, Object?>> _findRecord(
+    String table,
+    String fieldName,
+    Object fieldValue,
+  ) async {
+    late bool valid;
+    switch (fieldValue) {
+      case int val: valid = val > 0;
+      case String val: valid = val.isNotEmpty;
+    }
+    assert(valid, "Attempt to find a record with an invalid $fieldName: $fieldValue");
+    final results = await _fetchRecords(table, QueryOpts(
+        filtering: [FilterField(field: fieldName, value: fieldValue)]
+    ));
+    assert(results.isNotEmpty, "Could not any '$table' with the id: $fieldValue");
+    assert(results.length == 1, "Found too many '$table' with the id: $fieldValue");
+    return Future.value(results[0]);
   }
 
   static Future<List<IngredientModel>> fetchIngredients(
       [QueryOpts? queryOpts]
       ) async {
-    final records = await _fetchRecords(IngredientTable.tableName, queryOpts);
+    final records = await _fetchRecords(IngredientTable.name, queryOpts);
     return records.map((e) => IngredientModel.fromMap(e)).toList();
+  }
+
+  static Future<IngredientModel> getIngredientById(int id) async {
+    return IngredientModel.fromMap(await _findRecord(
+        IngredientTable.name,
+        IngredientFields.id,
+        id
+    ));
+  }
+
+  static Future<IngredientModel> getIngredientByName(String name) async {
+    return IngredientModel.fromMap(await _findRecord(
+        IngredientTable.name,
+        IngredientFields.name,
+        name
+    ));
   }
 
   static Future<IngredientModel> createIngredient({
@@ -127,12 +156,15 @@ class AppDatabase {
     required int frequency,
   }) async {
     var model = IngredientModel(
-      id: _nextId,
       name: name,
       frequency: frequency,
     );
-    ingredients.add(model);
-    return ingredients.firstWhere((element) => element.id == model.id);
+    final id = await (await db).insert(
+      IngredientTable.name,
+      model.toMap(),
+    );
+    assert(id > 0, "Failed to create ingredient");
+    return getIngredientById(id);
   }
 
   static Future<IngredientModel> updateIngredient({
@@ -140,28 +172,51 @@ class AppDatabase {
     required String name,
     required int frequency,
   }) async {
-    var model = ingredients.firstWhere((element) => element.id == id);
-    ingredients.remove(model);
+    var model = await getIngredientById(id);
     model = IngredientModel(
       id: model.id,
       name: name,
       frequency: frequency,
     );
-    ingredients.add(model);
-    return ingredients.firstWhere((element) => element.id == model.id);
+    await (await db).update(
+      IngredientTable.name,
+      model.toMap(),
+      where: "${IngredientFields.id} = ?",
+      whereArgs: [id],
+    );
+    return getIngredientById(id);
   }
 
-  static Future<void> deleteIngredient({required int id}) async {
-    final model = ingredients.firstWhere((element) => element.id == id);
-    ingredients.remove(model);
-    return Future.value();
+  static Future deleteIngredient(int id) async {
+    final _ = await getIngredientById(id);
+    await (await db).delete(
+      IngredientTable.name,
+      where: "${IngredientFields.id} = ?",
+      whereArgs: [id],
+    );
   }
 
   static Future<List<MeasurementModel>> fetchMeasurements(
     [QueryOpts? queryOpts]
   ) async {
-    final records = await _fetchRecords(MeasurementTable.tableName, queryOpts);
+    final records = await _fetchRecords(MeasurementTable.name, queryOpts);
     return records.map((e) => MeasurementModel.fromMap(e)).toList();
+  }
+
+  static Future<MeasurementModel> getMeasurementById(int id) async {
+    return MeasurementModel.fromMap(await _findRecord(
+        MeasurementTable.name,
+        MeasurementFields.id,
+        id
+    ));
+  }
+
+  static Future<MeasurementModel> getMeasurementByLabel(String label) async {
+    return MeasurementModel.fromMap(await _findRecord(
+        MeasurementTable.name,
+        MeasurementFields.label,
+        label
+    ));
   }
 
   static Future<MeasurementModel> createMeasurement({
@@ -169,12 +224,14 @@ class AppDatabase {
     required String description,
   }) async {
     var model = MeasurementModel(
-      id: _nextId,
       label: label,
       description: description,
     );
-    measurements.add(model);
-    return measurements.firstWhere((element) => element.id == model.id);
+    final id = await (await db).insert(
+      MeasurementTable.name,
+      model.toMap(),
+    );
+    return getMeasurementById(id);
   }
 
   static Future<MeasurementModel> updateMeasurement({
@@ -182,28 +239,51 @@ class AppDatabase {
     required String label,
     required String description,
   }) async {
-    var model = measurements.firstWhere((element) => element.id == id);
-    measurements.remove(model);
+    var model = await getMeasurementById(id);
     model = MeasurementModel(
       id: model.id,
       label: label,
       description: description,
     );
-    measurements.add(model);
-    return measurements.firstWhere((element) => element.id == model.id);
+    await (await db).update(
+      MeasurementTable.name,
+      model.toMap(),
+      where: "${MeasurementFields.id} = ?",
+      whereArgs: [id],
+    );
+    return getMeasurementById(id);
   }
 
-  static Future<void> deleteMeasurement({required int id}) async {
-    final model = measurements.firstWhere((element) => element.id == id);
-    measurements.remove(model);
-    return Future.value();
+  static Future<void> deleteMeasurement(int id) async {
+    final _ = getMeasurementById(id);
+    await (await db).delete(
+      MeasurementTable.name,
+      where: "${MeasurementFields.id} = ?",
+      whereArgs: [id],
+    );
   }
 
   static Future<List<RecipeModel>> fetchRecipes(
     [QueryOpts? queryOpts]
   ) async {
-    final records = await _fetchRecords(RecipeTable.tableName, queryOpts);
+    final records = await _fetchRecords(RecipeTable.name, queryOpts);
     return records.map((e) => RecipeModel.fromMap(e)).toList();
+  }
+
+  static Future<RecipeModel> getRecipeById(int id) async {
+    return RecipeModel.fromMap(await _findRecord(
+        RecipeTable.name,
+        RecipeFields.id,
+        id
+    ));
+  }
+
+  static Future<RecipeModel> getRecipeByName(String name) async {
+    return RecipeModel.fromMap(await _findRecord(
+        RecipeTable.name,
+        RecipeFields.name,
+        name
+    ));
   }
 
   static Future<RecipeModel> createRecipe({
@@ -216,7 +296,6 @@ class AppDatabase {
     required int frequency,
   }) async {
     final model = RecipeModel(
-      id: _nextId,
       name: name,
       description: description,
       cookingTime: cookingTime,
@@ -225,8 +304,11 @@ class AppDatabase {
       rating: rating,
       frequency: frequency,
     );
-    recipes.add(model);
-    return recipes.firstWhere((element) => element.id == model.id);
+    final id = await (await db).insert(
+      RecipeTable.name,
+      model.toMap(),
+    );
+    return getRecipeById(id);
   }
 
   static Future<RecipeModel> updateRecipe({
@@ -239,8 +321,7 @@ class AppDatabase {
     required int rating,
     required int frequency,
   }) async {
-    var model = recipes.firstWhere((element) => element.id == id);
-    recipes.remove(model);
+    var model = await getRecipeById(id);
     model = RecipeModel(
       id: model.id,
       name: name,
@@ -251,21 +332,37 @@ class AppDatabase {
       rating: rating,
       frequency: frequency,
     );
-    recipes.add(model);
-    return recipes.firstWhere((element) => element.id == model.id);
+    await (await db).update(
+      RecipeTable.name,
+      model.toMap(),
+      where: "${RecipeFields.id} = ?",
+      whereArgs: [id],
+    );
+    return getRecipeById(id);
   }
 
-  static Future<void> deleteRecipes({required int id}) async {
-    final model = recipes.firstWhere((element) => element.id == id);
-    recipes.remove(model);
-    return Future.value();
+  static Future<void> deleteRecipes(int id) async {
+    final _ = await getRecipeById(id);
+    await (await db).delete(
+      RecipeTable.name,
+      where: "${RecipeFields.id} = ?",
+      whereArgs: [id],
+    );
   }
 
   static Future<List<RecipeIngredientModel>> fetchRecipeIngredients(
       [QueryOpts? queryOpts]
       ) async {
-    final records = await _fetchRecords(RecipeIngredientTable.tableName, queryOpts);
+    final records = await _fetchRecords(RecipeIngredientTable.name, queryOpts);
     return records.map((e) => RecipeIngredientModel.fromMap(e)).toList();
+  }
+
+  static Future<RecipeIngredientModel> getRecipeIngredientById(int id) async {
+    return RecipeIngredientModel.fromMap(await _findRecord(
+        RecipeIngredientTable.name,
+        RecipeIngredientFields.id,
+        id
+    ));
   }
 
   static Future<RecipeIngredientModel> createRecipeIngredient({
@@ -277,7 +374,6 @@ class AppDatabase {
     required double measurementValue,
   }) async {
     final model = RecipeIngredientModel(
-      id: _nextId,
       recipeId: recipeId,
       ingredientId: ingredientId,
       label: label,
@@ -285,8 +381,11 @@ class AppDatabase {
       measurementId: measurementId,
       measurementValue: measurementValue,
     );
-    recipeIngredients.add(model);
-    return recipeIngredients.firstWhere((element) => element.id == model.id);
+    final id = await (await db).insert(
+      RecipeIngredientTable.name,
+      model.toMap(),
+    );
+    return getRecipeIngredientById(id);
   }
 
   static Future<RecipeIngredientModel> updateRecipeIngredient({
@@ -295,8 +394,7 @@ class AppDatabase {
     required String description,
     required double measurementValue,
   }) async {
-    var model = recipeIngredients.firstWhere((element) => element.id == id);
-    recipeIngredients.remove(model);
+    var model = await getRecipeIngredientById(id);
     model = RecipeIngredientModel(
       id: model.id,
       recipeId: model.recipeId,
@@ -306,14 +404,22 @@ class AppDatabase {
       description: description,
       measurementValue: measurementValue,
     );
-    recipeIngredients.add(model);
-    return recipeIngredients.firstWhere((element) => element.id == model.id);
+    await (await db).update(
+      RecipeIngredientTable.name,
+      model.toMap(),
+      where: "${RecipeIngredientFields.id} = ?",
+      whereArgs: [id],
+    );
+    return getRecipeIngredientById(id);
   }
 
   static Future<void> deleteRecipeIngredients({required int id}) async {
-    final model = recipeIngredients.firstWhere((element) => element.id == id);
-    recipeIngredients.remove(model);
-    return Future.value();
+    final _ = await getRecipeIngredientById(id);
+    await (await db).delete(
+      RecipeIngredientTable.name,
+      where: "${RecipeIngredientTable.name}",
+      whereArgs: [id],
+    );
   }
 }
 

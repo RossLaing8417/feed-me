@@ -31,7 +31,6 @@ class RecipeIngredientModel {
 
   Map<String, Object?> toMap() {
     return {
-      // RecipeIngredientFields.id: id,
       RecipeIngredientFields.recipeId: recipeId,
       RecipeIngredientFields.ingredientId: ingredientId,
       RecipeIngredientFields.label: label,
