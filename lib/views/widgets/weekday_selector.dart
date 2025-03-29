@@ -11,7 +11,7 @@ class WeekdaySelector extends FormField<Weekday> {
     super.enabled,
     super.autovalidateMode,
     super.restorationId,
-    String? label,
+    InputDecoration? decoration,
   }) : super(
     builder: (field) {
       final text = <String>[];
@@ -20,21 +20,22 @@ class WeekdaySelector extends FormField<Weekday> {
         text.add(Weekday.fromDay(i).toString());
         selected.add(field.value?.hasDay(i) ?? false);
       }
-      return Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
+      return Row(
         children: [
-          if (label != null) Text(label, textAlign: TextAlign.left),
-          ToggleButtons(
-            isSelected: selected,
-            children: text.map((e) => Text(e[0])).toList(),
-            onPressed: (index) {
-              final weekday = field.value ?? Weekday.none;
-              weekday.toggleDay(index + 1);
-              field.didChange(weekday);
-            },
+          Expanded(
+            child: InputDecorator(
+              decoration: (decoration ?? InputDecoration()).copyWith(errorText: field.errorText),
+              child: ToggleButtons(
+                isSelected: selected,
+                children: text.map((e) => Text(e[0])).toList(),
+                onPressed: (index) {
+                  final weekday = field.value ?? Weekday.none;
+                  weekday.toggleDay(index + 1);
+                  field.didChange(weekday);
+                },
+              ),
+            ),
           ),
-          if (field.hasError)
-            Text(field.errorText ?? "", style: TextStyle(color: Colors.red))
         ],
       );
     },

@@ -267,9 +267,7 @@ class _AppRecipeEditViewState extends State<AppRecipeEditView> {
             children: [
               TextFormField(
                 maxLength: 100,
-                decoration: InputDecoration(
-                  label: Text("Name"),
-                ),
+                decoration: InputDecoration(labelText: "Name"),
                 initialValue: _name,
                 validator: (value) {
                   if (value == null || value.isEmpty) {
@@ -282,9 +280,7 @@ class _AppRecipeEditViewState extends State<AppRecipeEditView> {
               TextFormField(
                 maxLength: 300,
                 maxLines: 3,
-                decoration: InputDecoration(
-                  label: Text("Description"),
-                ),
+                decoration: InputDecoration(labelText: "Description"),
                 initialValue: _description,
                 validator: (value) {
                   if (value == null || value.isEmpty) {
@@ -295,7 +291,7 @@ class _AppRecipeEditViewState extends State<AppRecipeEditView> {
                 onSaved: (value) => _description = value!,
               ),
               WeekdaySelector(
-                label: "Weekday",
+                decoration: InputDecoration(labelText: "Weekday"),
                 initialValue: _weekday,
                 validator: (value) {
                   if (value == null || value.hasNone()) {
@@ -308,14 +304,16 @@ class _AppRecipeEditViewState extends State<AppRecipeEditView> {
               Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  Text("Rating"),
-                  StarRating(
-                    mainAxisAlignment: MainAxisAlignment.start,
-                    size: 40.0,
-                    rating: _rating.toDouble(),
-                    allowHalfRating: false,
-                    onRatingChanged: (value) => setState(() => _rating = value.toInt()),
-                  )
+                  InputDecorator(
+                    decoration: InputDecoration(labelText: "Rating"),
+                    child: StarRating(
+                      mainAxisAlignment: MainAxisAlignment.start,
+                      size: 40.0,
+                      rating: _rating.toDouble(),
+                      allowHalfRating: false,
+                      onRatingChanged: (value) => setState(() => _rating = value.toInt()),
+                    ),
+                  ),
                 ],
               )
             ],

@@ -213,7 +213,7 @@ class _AppIngredientEditViewState extends State<AppIngredientEditView> {
             children: [
               TextFormField(
                 maxLength: 100,
-                decoration: InputDecoration(label: Text("Name")),
+                decoration: InputDecoration(labelText: "Name"),
                 initialValue: _name,
                 validator: (value) {
                   if (value == null || value.isEmpty) {
@@ -226,7 +226,7 @@ class _AppIngredientEditViewState extends State<AppIngredientEditView> {
               NumericStepButtonFormField(
                 minValue: 0,
                 maxValue: 10,
-                label: "Frequency",
+                decoration: InputDecoration(labelText: "Frequency"),
                 initialValue: _frequency,
                 validator: (value) {
                   if (value == null || value == 0) {

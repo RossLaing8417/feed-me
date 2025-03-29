@@ -86,7 +86,7 @@ class NumericStepButtonFormField extends FormField<int> {
     super.key,
     required int minValue,
     required int maxValue,
-    String? label,
+    InputDecoration? decoration,
     super.onSaved,
     super.forceErrorText,
     super.validator,
@@ -98,16 +98,15 @@ class NumericStepButtonFormField extends FormField<int> {
     builder: (field) => Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        if (label != null)
-          Text(label, textAlign: TextAlign.left),
-        NumericStepButton(
-          initialValue: field.value,
-          minValue: minValue,
-          maxValue: maxValue,
-          onChanged: field.didChange,
+        InputDecorator(
+          decoration: (decoration ?? InputDecoration()).copyWith(errorText: field.errorText),
+          child: NumericStepButton(
+            initialValue: field.value,
+            minValue: minValue,
+            maxValue: maxValue,
+            onChanged: field.didChange,
+          ),
         ),
-        if (field.hasError)
-          Text(field.errorText ?? "", style: TextStyle(color: Colors.red)),
       ],
     ),
   );
