@@ -1,20 +1,19 @@
 import 'dart:async';
 
 import 'package:feedme/database/database.dart';
-import 'package:feedme/database/models/ingredient.dart';
-import 'package:feedme/views/widgets/numeric_step_button.dart';
+import 'package:feedme/database/models/measurement.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 
-class AppIngredientsView extends StatefulWidget {
-  const AppIngredientsView({super.key});
+class AppMeasurementsView extends StatefulWidget {
+  const AppMeasurementsView({super.key});
 
   @override
-  State<AppIngredientsView> createState() => _AppIngredientsViewState();
+  State<AppMeasurementsView> createState() => _AppMeasurementsViewState();
 }
 
-class _AppIngredientsViewState extends State<AppIngredientsView> {
-  List<IngredientModel> _ingredients = [];
+class _AppMeasurementsViewState extends State<AppMeasurementsView> {
+  List<MeasurementModel> _measurements = [];
   final _searchController = TextEditingController();
   Timer? _searchDebounce;
 
@@ -25,18 +24,19 @@ class _AppIngredientsViewState extends State<AppIngredientsView> {
     }
     _searchDebounce = Timer(Duration(milliseconds: 200), () {
       setState(() {
-        _ingredients = AppDatabase.ingredients.where((element)
-          => element.name.toLowerCase().contains(filter)).toList();
-        _ingredients.sort((a, b) => a.name.toLowerCase().compareTo(b.name.toLowerCase()));
-        // AppDatabase.fetchIngredients(QueryOpts(
+        _measurements = AppDatabase.measurements.where((element)
+          => element.label.toLowerCase().contains(filter.toLowerCase())).toList();
+        _measurements.sort((a, b)
+          => a.label.toLowerCase().compareTo(b.label.toLowerCase()));
+        // AppDatabase.fetchMeasurements(QueryOpts(
         //   filtering:  [
         //     FilterField(
-        //         field: IngredientFields.name,
+        //         field: MeasurementFields.label,
         //         operator: FilterField.like,
         //         value: "%${filter.replaceAll(" ", "%")}%",
         //     )
         //   ],
-        //   sorting: [SortField(field: IngredientFields.name)],
+        //   sorting: [SortField(field: MeasurementFields.name)],
         // ));
         _searchDebounce = null;
       });
@@ -45,16 +45,16 @@ class _AppIngredientsViewState extends State<AppIngredientsView> {
 
   search() => applyFilter(_searchController.text);
 
-  editIngredient([int? id]) async {
+  editMeasurement([int? id]) async {
     await Navigator.push(
-        context,
-        MaterialPageRoute(builder: (context) => AppIngredientEditView(id: id))
+      context,
+      MaterialPageRoute(builder: (context) => AppMeasurementEditView(id: id)),
     );
     search();
   }
 
-  deleteIngredient(int id) async {
-    await AppDatabase.deleteIngredient(id: id);
+  deleteMeasurement(int id) async {
+    await AppDatabase.deleteMeasurement(id: id);
     search();
   }
 
@@ -77,7 +77,7 @@ class _AppIngredientsViewState extends State<AppIngredientsView> {
     return Scaffold(
       appBar: AppBar(),
       body: Padding(
-        padding: EdgeInsets.only(left: 8.0, right: 8.0),
+        padding: EdgeInsets.symmetric(horizontal: 8.0),
         child: Column(
           spacing: 16.0,
           children: [
@@ -95,19 +95,19 @@ class _AppIngredientsViewState extends State<AppIngredientsView> {
             ),
             Expanded(
               child: Center(
-                child: _ingredients.isEmpty
-                ? Text("No ingredients found...")
+                child: _measurements.isEmpty
+                ? Text("No measurements found")
                 : ListView.builder(
-                  itemCount: _ingredients.length,
+                  itemCount: _measurements.length,
                   itemBuilder: (context, index) {
-                    final ingredient = _ingredients[index];
+                    final measurement = _measurements[index];
                     return Expanded(child: Card(
                       child: ListTile(
-                        onTap: () => editIngredient(ingredient.id!),
-                        onLongPress: () => openDeleteDialog(ingredient.id!),
-                        title: Text(ingredient.name),
+                        onTap: () => editMeasurement(measurement.id!),
+                        onLongPress: () => openDeleteDialog(measurement.id!),
+                        title: Text(measurement.label),
                         titleTextStyle: Theme.of(context).textTheme.titleLarge,
-                        subtitle: Text(ingredient.frequency.toString()),
+                        subtitle: Text(measurement.description),
                         subtitleTextStyle: Theme.of(context).textTheme.titleSmall,
                       ),
                     ));
@@ -119,10 +119,10 @@ class _AppIngredientsViewState extends State<AppIngredientsView> {
         ),
       ),
       floatingActionButton: FloatingActionButton(
-        onPressed: () => editIngredient(),
-        tooltip: "Add ingredient",
+        onPressed: () => editMeasurement(),
+        tooltip: "Add measurement",
         child: Icon(CupertinoIcons.add),
-      )
+      ),
     );
   }
 
@@ -130,11 +130,11 @@ class _AppIngredientsViewState extends State<AppIngredientsView> {
     return showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        title: Text("Are you sure you want to delete this ingredient?"),
+        title: Text("Are you sure you want to delete this measurement"),
         actions: [
           FilledButton(
             onPressed: () {
-              deleteIngredient(id);
+              deleteMeasurement(id);
               Navigator.of(context).pop();
             },
             child: Text("Delete"),
@@ -149,20 +149,20 @@ class _AppIngredientsViewState extends State<AppIngredientsView> {
   }
 }
 
-class AppIngredientEditView extends StatefulWidget {
+class AppMeasurementEditView extends StatefulWidget {
   final int? id;
-  const AppIngredientEditView({super.key, this.id});
+  const AppMeasurementEditView({super.key, this.id});
 
   @override
-  State<AppIngredientEditView> createState() => _AppIngredientEditViewState();
+  State<AppMeasurementEditView> createState() => _AppMeasurementEditViewState();
 }
 
-class _AppIngredientEditViewState extends State<AppIngredientEditView> {
+class _AppMeasurementEditViewState extends State<AppMeasurementEditView> {
   var _isNew = false;
   final _formKey = GlobalKey<FormState>();
 
-  String _name = "";
-  int _frequency = 0;
+  String _label = "";
+  String _description = "";
 
   refresh() {
     if (widget.id == null) {
@@ -171,24 +171,23 @@ class _AppIngredientEditViewState extends State<AppIngredientEditView> {
       });
       return;
     }
-    final model = AppDatabase.ingredients.firstWhere((element) => element.id == widget.id);
+    final model = AppDatabase.measurements.firstWhere((element) => element.id == widget.id);
     setState(() {
-      _isNew = false;
-      _name = model.name;
-      _frequency = model.frequency;
+      _label = model.label;
+      _description = model.description;
     });
   }
 
   saveChanges(context) async {
     final _ = _isNew
-      ? await AppDatabase.createIngredient(
-        name: _name,
-        frequency: _frequency,
+      ? await AppDatabase.createMeasurement(
+        label: _label,
+        description: _description,
       )
-      : await AppDatabase.updateIngredient(
+      : await AppDatabase.updateMeasurement(
         id: widget.id!,
-        name: _name,
-        frequency: _frequency,
+        label: _label,
+        description: _description,
       );
     Navigator.pop(context);
   }
@@ -211,28 +210,28 @@ class _AppIngredientEditViewState extends State<AppIngredientEditView> {
             children: [
               TextFormField(
                 maxLength: 100,
-                decoration: InputDecoration(labelText: "Name"),
-                initialValue: _name,
+                decoration: InputDecoration(labelText: "Label"),
+                initialValue: _label,
                 validator: (value) {
                   if (value == null || value.isEmpty) {
-                    return "Please provide a name";
+                    return "Please provide a label";
                   }
                   return null;
                 },
-                onSaved: (newValue) => _name = newValue!,
+                onSaved: (newValue) => _label = newValue!,
               ),
-              NumericStepButtonFormField(
-                minValue: 0,
-                maxValue: 10,
-                decoration: InputDecoration(labelText: "Frequency"),
-                initialValue: _frequency,
+              TextFormField(
+                maxLength: 250,
+                maxLines: 3,
+                decoration: InputDecoration(labelText: "Description"),
+                initialValue: _description,
                 validator: (value) {
-                  if (value == null || value == 0) {
-                    return "Please provide a frequency";
+                  if (value == null || value.isEmpty) {
+                    return "Please provide a description";
                   }
                   return null;
                 },
-                onSaved: (newValue) => _frequency = newValue!,
+                onSaved: (newValue) => _description = newValue!,
               ),
             ],
           ),

@@ -1,6 +1,7 @@
 import 'package:feedme/views/home.dart';
 import 'package:feedme/views/ingredients.dart';
 import 'package:feedme/views/meal_planner.dart';
+import 'package:feedme/views/measurements.dart';
 import 'package:feedme/views/recipes.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
@@ -35,8 +36,12 @@ class _AppLayoutState extends State<AppLayout> {
             onSelected: (value) {
               switch(value) {
                 case 0: Navigator.push(
-                  context,
+                    context,
                     MaterialPageRoute(builder: (context) => AppIngredientsView())
+                );
+                case 1: Navigator.push(
+                  context,
+                    MaterialPageRoute(builder: (context) => AppMeasurementsView())
                 );
               }
             },
@@ -44,6 +49,10 @@ class _AppLayoutState extends State<AppLayout> {
               PopupMenuItem<int>(
                 value: 0,
                 child: Text("Ingredients"),
+              ),
+              PopupMenuItem<int>(
+                value: 1,
+                child: Text("Measurements"),
               ),
             ],
           )
