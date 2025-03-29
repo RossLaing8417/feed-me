@@ -3,12 +3,19 @@ import 'package:feedme/database/schema/measurement.dart';
 import 'package:feedme/database/schema/recipe.dart';
 
 class RecipeIngredientFields {
+  /// Unique identifier
   static const id = "id";
+  /// Owning recipe
   static const recipeId = "recipe_id";
+  /// Ingredient type
   static const ingredientId = "ingredient_id";
+  /// Ingredient label (e.g steak)
   static const label = "label";
+  /// Ingredient description
   static const description = "description";
+  /// Measurement type
   static const measurementId = "measurement_id";
+  /// Measurement value
   static const measurementValue = "measurementValue";
 
   static const columns = [

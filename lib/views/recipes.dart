@@ -8,6 +8,7 @@ import 'package:feedme/database/models/recipe.dart';
 import 'package:feedme/database/models/recipe_ingredient.dart';
 import 'package:feedme/views/ingredients.dart';
 import 'package:feedme/views/measurements.dart';
+import 'package:feedme/views/widgets/numeric_step_button.dart';
 import 'package:feedme/views/widgets/weekday_selector.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
@@ -25,22 +26,23 @@ class _AppRecipesViewState extends State<AppRecipesView> {
   List<RecipeModel> _recipes = [];
   final _searchController = TextEditingController();
 
-  filterRecipes() {
-    final search = _searchController.text;
+  filterRecipes(String filter) {
     setState(() {
       _recipes = AppDatabase.recipes.where((element)
-        => element.name.contains(search)).toList();
+        => element.name.contains(filter)).toList();
       _recipes.sort((a,b)
         => a.name.toLowerCase().compareTo(b.name.toLowerCase()));
     });
   }
+
+  search() => filterRecipes(_searchController.text);
 
   addRecipe() async {
     await Navigator.push(
       context,
       MaterialPageRoute(builder: (context) => AppRecipeEditView()),
     );
-    filterRecipes();
+    search();
   }
 
   viewRecipe(context, int id) async {
@@ -48,19 +50,19 @@ class _AppRecipesViewState extends State<AppRecipesView> {
       context,
       MaterialPageRoute(builder: (context) => AppRecipeView(id)),
     );
-    filterRecipes();
+    search();
   }
 
   @override
   void initState() {
+    _searchController.addListener(search);
+    search();
     super.initState();
-    filterRecipes();
-    _searchController.addListener(filterRecipes);
   }
 
   @override
   void dispose() {
-    _searchController.removeListener(filterRecipes);
+    _searchController.removeListener(search);
     _searchController.dispose();
     super.dispose();
   }
@@ -68,22 +70,51 @@ class _AppRecipesViewState extends State<AppRecipesView> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(),
-      body: Center(
-        child: _recipes.isEmpty
-            ? const Text("No recipes found...")
-            : ListView.builder(
-          itemCount: _recipes.length,
-          itemBuilder: (context, index) {
-            final recipe = _recipes[index];
-            return Card(
-              child: ListTile(
-                onTap: () => viewRecipe(context, recipe.id!),
-                title: Text(recipe.name),
-                titleTextStyle: Theme.of(context).textTheme.headlineMedium,
+      appBar: AppBar(
+        automaticallyImplyLeading: false,
+      ),
+      body: Padding(
+        padding: EdgeInsets.symmetric(horizontal: 8.0),
+        child: Column(
+          spacing: 16.0,
+          children: [
+            SearchBar(
+              controller: _searchController,
+              leading: Icon(CupertinoIcons.search),
+              hintText: "Search...",
+              trailing: [
+                if (_searchController.text.isNotEmpty)
+                  IconButton(
+                    onPressed: () => setState(() => _searchController.clear()),
+                    icon: Icon(CupertinoIcons.xmark),
+                  ),
+              ],
+            ),
+            Expanded(
+              child: _recipes.isEmpty
+              ? const Text("No recipes found...")
+              : ListView.builder(
+                itemCount: _recipes.length,
+                itemBuilder: (context, index) {
+                  final recipe = _recipes[index];
+                  return Card(
+                    child: ListTile(
+                      onTap: () => viewRecipe(context, recipe.id!),
+                      title: Text(recipe.name),
+                      titleTextStyle: Theme.of(context).textTheme.headlineMedium,
+                      subtitle: Expanded(child: Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          StarRating(rating: recipe.rating.toDouble()),
+                          Text(recipe.cookingTime),
+                        ],
+                      )),
+                    ),
+                  );
+                },
               ),
-            );
-          },
+            ),
+          ],
         ),
       ),
       floatingActionButton: FloatingActionButton(
@@ -158,11 +189,19 @@ class _AppRecipeViewState extends State<AppRecipeView> {
             style: Theme.of(context).textTheme.bodyLarge,
           ),
           Text(
+            _recipe.cookingTime,
+            style: Theme.of(context).textTheme.bodyMedium,
+          ),
+          Text(
             _recipe.weekday.toString(),
             style: Theme.of(context).textTheme.bodyMedium,
           ),
           StarRating(
             rating: _recipe.rating.toDouble(),
+          ),
+          Text(
+            _recipe.frequency.toString(),
+            style: Theme.of(context).textTheme.bodyMedium,
           ),
           Divider(height: 32.0),
           Padding(
@@ -198,7 +237,9 @@ class _AppRecipeViewState extends State<AppRecipeView> {
                       onLongPress: () => openDeleteDialog(ingredient.id!),
                       title: Text(ingredient.label),
                       titleTextStyle: Theme.of(context).textTheme.titleMedium,
-                      subtitle: Text("${ingredient.measurementValue} ${measurement.label}"),
+                      subtitle: Text(
+                        "${ingredient.measurementValue} ${measurement.label}",
+                      ),
                       subtitleTextStyle: Theme.of(context).textTheme.titleSmall,
                     ),
                   );
@@ -206,7 +247,7 @@ class _AppRecipeViewState extends State<AppRecipeView> {
               ),
             ),
           ),
-          SizedBox(height: 64.0 + 16.0),
+          SizedBox(height: 64.0 + 8.0),
         ],
       ),
       floatingActionButton: FloatingActionButton(
@@ -258,8 +299,11 @@ class _AppRecipeEditViewState extends State<AppRecipeEditView> {
 
   String _name = "";
   String _description = "";
+  String _cookingTime = "";
+  final _mealTime = MealTime.supper;
   Weekday _weekday = Weekday.none;
   int _rating = 0;
+  int _frequency = 0;
 
   refresh() {
     if (widget.id == null) {
@@ -273,8 +317,11 @@ class _AppRecipeEditViewState extends State<AppRecipeEditView> {
       _isNew = false;
       _name = model.name;
       _description = model.description;
+      _cookingTime = model.cookingTime;
+      // _mealTime = model.mealTime;
       _weekday = model.weekday;
       _rating = model.rating;
+      _frequency = model.frequency;
     });
   }
 
@@ -283,17 +330,21 @@ class _AppRecipeEditViewState extends State<AppRecipeEditView> {
       ? await AppDatabase.createRecipe(
         name: _name,
         description: _description,
-        mealTime: MealTime.supper,
+        cookingTime: _cookingTime,
+        mealTime: _mealTime,
         weekday: _weekday,
         rating: _rating,
+        frequency: _frequency,
       )
       : await AppDatabase.updateRecipe(
         id: widget.id!,
         name: _name,
         description: _description,
-        mealTime: MealTime.supper,
+        cookingTime: _cookingTime,
+        mealTime: _mealTime,
         weekday: _weekday,
         rating: _rating,
+        frequency: _frequency,
       );
     if (_isNew) {
       Navigator.pushReplacement(
@@ -319,61 +370,84 @@ class _AppRecipeEditViewState extends State<AppRecipeEditView> {
         padding: const EdgeInsets.all(16.0),
         child: Form(
           key: _formKey,
-          child: Column(
-            // crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              TextFormField(
-                maxLength: 100,
-                decoration: InputDecoration(labelText: "Name"),
-                initialValue: _name,
-                validator: (value) {
-                  if (value == null || value.isEmpty) {
-                    return "Please provide a name";
-                  }
-                  return null;
-                },
-                onSaved: (value) => _name = value!,
-              ),
-              TextFormField(
-                maxLength: 300,
-                maxLines: 3,
-                decoration: InputDecoration(labelText: "Description"),
-                initialValue: _description,
-                validator: (value) {
-                  if (value == null || value.isEmpty) {
-                    return "Please provide a description";
-                  }
-                  return null;
-                },
-                onSaved: (value) => _description = value!,
-              ),
-              WeekdaySelector(
-                decoration: InputDecoration(labelText: "Weekday"),
-                initialValue: _weekday,
-                validator: (value) {
-                  if (value == null || value.hasNone()) {
-                    return "Please select a weekday";
-                  }
-                  return null;
-                },
-                onSaved: (value) => _weekday = value!,
-              ),
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  InputDecorator(
-                    decoration: InputDecoration(labelText: "Rating"),
-                    child: StarRating(
-                      mainAxisAlignment: MainAxisAlignment.start,
-                      size: 40.0,
-                      rating: _rating.toDouble(),
-                      allowHalfRating: false,
-                      onRatingChanged: (value) => setState(() => _rating = value.toInt()),
-                    ),
+          child: SingleChildScrollView(
+            child: Column(
+              spacing: 16.0,
+              children: [
+                TextFormField(
+                  maxLength: 100,
+                  decoration: InputDecoration(labelText: "Name"),
+                  initialValue: _name,
+                  validator: (value) {
+                    if (value == null || value.isEmpty) {
+                      return "Please provide a name";
+                    }
+                    return null;
+                  },
+                  onSaved: (value) => _name = value!,
+                ),
+                TextFormField(
+                  maxLength: 300,
+                  maxLines: 3,
+                  decoration: InputDecoration(labelText: "Description"),
+                  initialValue: _description,
+                  validator: (value) {
+                    if (value == null || value.isEmpty) {
+                      return "Please provide a description";
+                    }
+                    return null;
+                  },
+                  onSaved: (value) => _description = value!,
+                ),
+                TextFormField(
+                  maxLength: 100,
+                  decoration: InputDecoration(labelText: "Cooking time"),
+                  initialValue: _cookingTime,
+                  validator: (value) {
+                    if (value == null || value.isEmpty) {
+                      return "Please provide a cooking time";
+                    }
+                    return null;
+                  },
+                  onSaved: (newValue) => _cookingTime = newValue!,
+                ),
+                WeekdaySelector(
+                  decoration: InputDecoration(labelText: "Weekday"),
+                  initialValue: _weekday,
+                  validator: (value) {
+                    if (value == null || value.hasNone()) {
+                      return "Please select a weekday";
+                    }
+                    return null;
+                  },
+                  onSaved: (value) => _weekday = value!,
+                ),
+                InputDecorator(
+                  decoration: InputDecoration(labelText: "Rating"),
+                  child: StarRating(
+                    mainAxisAlignment: MainAxisAlignment.start,
+                    size: 40.0,
+                    rating: _rating.toDouble(),
+                    allowHalfRating: false,
+                    onRatingChanged: (value) => setState(() => _rating = value.toInt()),
                   ),
-                ],
-              )
-            ],
+                ),
+                NumericStepButtonFormField(
+                  minValue: 0,
+                  maxValue: 10,
+                  decoration: InputDecoration(labelText: "Frequency"),
+                  initialValue: _frequency,
+                  validator: (value) {
+                    if (value == null || value == 0) {
+                      return "Please provide a frequency";
+                    }
+                    return null;
+                  },
+                  onSaved: (newValue) => _frequency = newValue!,
+                ),
+                SizedBox(height: 64.0 + 8.0),
+              ],
+            )
           ),
         ),
       ),

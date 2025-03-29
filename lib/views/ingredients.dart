@@ -77,7 +77,7 @@ class _AppIngredientsViewState extends State<AppIngredientsView> {
     return Scaffold(
       appBar: AppBar(),
       body: Padding(
-        padding: EdgeInsets.only(left: 8.0, right: 8.0),
+        padding: EdgeInsets.symmetric(horizontal: 8.0),
         child: Column(
           spacing: 16.0,
           children: [

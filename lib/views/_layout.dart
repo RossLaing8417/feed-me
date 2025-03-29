@@ -58,6 +58,7 @@ class _AppLayoutState extends State<AppLayout> {
           )
         ],
       ),
+      body: page[index],
       bottomNavigationBar: BottomNavigationBar(
         iconSize: 28,
         currentIndex: index,
@@ -81,7 +82,6 @@ class _AppLayoutState extends State<AppLayout> {
           ),
         ],
       ),
-      body: page[index],
     );
   }
 }

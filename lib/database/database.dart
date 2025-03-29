@@ -209,17 +209,21 @@ class AppDatabase {
   static Future<RecipeModel> createRecipe({
     required String name,
     required String description,
+    required String cookingTime,
     required MealTime mealTime,
     required Weekday weekday,
     required int rating,
+    required int frequency,
   }) async {
     final model = RecipeModel(
       id: _nextId,
       name: name,
       description: description,
+      cookingTime: cookingTime,
       mealTime: mealTime,
       weekday: weekday,
       rating: rating,
+      frequency: frequency,
     );
     recipes.add(model);
     return recipes.firstWhere((element) => element.id == model.id);
@@ -229,9 +233,11 @@ class AppDatabase {
     required int id,
     required String name,
     required String description,
+    required String cookingTime,
     required MealTime mealTime,
     required Weekday weekday,
     required int rating,
+    required int frequency,
   }) async {
     var model = recipes.firstWhere((element) => element.id == id);
     recipes.remove(model);
@@ -239,9 +245,11 @@ class AppDatabase {
       id: model.id,
       name: name,
       description: description,
+      cookingTime: cookingTime,
       mealTime: mealTime,
       weekday: weekday,
       rating: rating,
+      frequency: frequency,
     );
     recipes.add(model);
     return recipes.firstWhere((element) => element.id == model.id);

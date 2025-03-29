@@ -1,6 +1,9 @@
 class MeasurementFields {
+  /// Unique identifier
   static const id = "id";
+  /// Measurement label (e.g kg, tsp, ml)
   static const label = "label";
+  /// Measurement description (e.g kilogram, teaspoon, milli-litre)
   static const description = "description";
 }
 

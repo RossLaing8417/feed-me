@@ -1,6 +1,10 @@
 class IngredientFields {
+  /// Unique identifier
   static const id = "id";
+  /// Ingredient name
   static const name = "name";
+  /// Frequency rating to indicate the ingredients repetitiveness
+  /// A higher frequency ingredient will appear more often than a lower
   static const frequency = "frequency";
 
   static List<String> get columns => [
