@@ -1,10 +1,17 @@
+import 'package:dropdown_search/dropdown_search.dart';
 import 'package:feedme/core/mealtime.dart';
 import 'package:feedme/core/weekday.dart';
 import 'package:feedme/database/database.dart';
+import 'package:feedme/database/models/ingredient.dart';
+import 'package:feedme/database/models/measurement.dart';
 import 'package:feedme/database/models/recipe.dart';
+import 'package:feedme/database/models/recipe_ingredient.dart';
+import 'package:feedme/views/ingredients.dart';
+import 'package:feedme/views/measurements.dart';
 import 'package:feedme/views/widgets/weekday_selector.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_rating/flutter_rating.dart';
 
 class AppRecipesView extends StatefulWidget {
@@ -99,12 +106,34 @@ class AppRecipeView extends StatefulWidget {
 
 class _AppRecipeViewState extends State<AppRecipeView> {
   late RecipeModel _recipe;
+  List<RecipeIngredientModel> _ingredients = [];
 
   refresh() {
-    final model = AppDatabase.recipes.firstWhere((element) => element.id == widget.id);
+    final model = AppDatabase.recipes.firstWhere((element)
+      => element.id == widget.id);
+    final ingredients = AppDatabase.recipeIngredients.where((element)
+      => element.recipeId == widget.id).toList();
     setState(() {
       _recipe = model;
+      _ingredients = ingredients;
+      _ingredients.sort((a, b) =>
+          a.label.toString().compareTo(b.label.toLowerCase()));
     });
+  }
+
+  editIngredient([int? id]) async {
+    await Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => AppRecipeIngredientEditView(id: id, recipeId: widget.id),
+      ),
+    );
+    refresh();
+  }
+
+  deleteIngredient(int id) async {
+    await AppDatabase.deleteRecipeIngredients(id: id);
+    refresh();
   }
 
   @override
@@ -135,7 +164,7 @@ class _AppRecipeViewState extends State<AppRecipeView> {
           StarRating(
             rating: _recipe.rating.toDouble(),
           ),
-          SizedBox(height: 32.0),
+          Divider(height: 32.0),
           Padding(
             padding: EdgeInsets.symmetric(horizontal: 32.0),
             child: Row(
@@ -146,7 +175,7 @@ class _AppRecipeViewState extends State<AppRecipeView> {
                   style: Theme.of(context).textTheme.headlineSmall,
                 ),
                 FilledButton(
-                  onPressed: () {},
+                  onPressed: editIngredient,
                   child: Icon(CupertinoIcons.add),
                 ),
               ],
@@ -157,14 +186,20 @@ class _AppRecipeViewState extends State<AppRecipeView> {
               padding: EdgeInsets.symmetric(horizontal: 16.0),
               // child: Placeholder(),
               child: ListView.builder(
-                scrollDirection: Axis.vertical,
                 shrinkWrap: true,
-                itemCount: 100,
+                itemCount: _ingredients.length,
                 itemBuilder: (context, index) {
+                  final ingredient = _ingredients[index];
+                  final measurement = AppDatabase.measurements.firstWhere((element)
+                    => element.id == ingredient.measurementId);
                   return Card(
                     child: ListTile(
-                      title: Text("Noice"),
+                      onTap: () => editIngredient(ingredient.id!),
+                      onLongPress: () => openDeleteDialog(ingredient.id!),
+                      title: Text(ingredient.label),
                       titleTextStyle: Theme.of(context).textTheme.titleMedium,
+                      subtitle: Text("${ingredient.measurementValue} ${measurement.label}"),
+                      subtitleTextStyle: Theme.of(context).textTheme.titleSmall,
                     ),
                   );
                 },
@@ -181,6 +216,28 @@ class _AppRecipeViewState extends State<AppRecipeView> {
         ).then((value) => refresh()),
         tooltip: "Edit",
         child: const Icon(CupertinoIcons.pencil),
+      ),
+    );
+  }
+
+  Future openDeleteDialog(int id) {
+    return showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text("Are you sure you want to remove this ingredient"),
+        actions: [
+          FilledButton(
+            onPressed: () {
+              deleteIngredient(id);
+              Navigator.of(context).pop();
+            },
+            child: Text("Delete"),
+          ),
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(),
+            child: Text("Cancel"),
+          ),
+        ],
       ),
     );
   }
@@ -329,6 +386,227 @@ class _AppRecipeEditViewState extends State<AppRecipeEditView> {
         },
         tooltip: "Save",
         child: const Icon(CupertinoIcons.checkmark_alt),
+      ),
+    );
+  }
+}
+
+class AppRecipeIngredientEditView extends StatefulWidget {
+  final int? id;
+  final int? recipeId;
+
+  const AppRecipeIngredientEditView({
+    super.key,
+    this.recipeId,
+    this.id,
+  }) : assert(
+    id != null || id == null && recipeId != null,
+    "Either an id or recipe id must be provided"
+  );
+
+  @override
+  State<AppRecipeIngredientEditView> createState() => _AppRecipeIngredientEditViewState();
+}
+
+class _AppRecipeIngredientEditViewState extends State<AppRecipeIngredientEditView> {
+  var _isNew = false;
+  final _formKey = GlobalKey<FormState>();
+
+  IngredientModel? _ingredient;
+  String _label = "";
+  String _description = "";
+  MeasurementModel? _measurement;
+  String _measurementValue = "";
+
+  refresh() {
+    if (widget.id == null) {
+      setState(() {
+        _isNew = true;
+      });
+      return;
+    }
+    final model = AppDatabase.recipeIngredients.firstWhere((element) => element.id == widget.id);
+    setState(() {
+      _ingredient = AppDatabase.ingredients.firstWhere((element) => element.id == model.ingredientId);
+      _label = model.label;
+      _description = model.description;
+      _measurement = AppDatabase.measurements.firstWhere((element) => element.id == model.measurementId);
+      _measurementValue = model.measurementValue.toString();
+    });
+  }
+
+  saveChanges(context) async {
+    final _ = _isNew
+      ? await AppDatabase.createRecipeIngredient(
+        recipeId: widget.recipeId!,
+        ingredientId: _ingredient!.id!,
+        label: _label,
+        description: _description,
+        measurementId: _measurement!.id!,
+        measurementValue: double.parse(_measurementValue)
+      )
+      : await AppDatabase.updateRecipeIngredient(
+        id: widget.id!,
+        label: _label,
+        description: _description,
+        measurementValue: double.parse(_measurementValue)
+      );
+    Navigator.pop(context);
+  }
+
+  @override
+  void initState() {
+    refresh();
+    super.initState();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        actions: [
+          PopupMenuButton<int>(
+            onSelected: (value) {
+              switch(value) {
+                case 0: Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (context) => AppIngredientsView())
+                );
+                case 1: Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (context) => AppMeasurementsView())
+                );
+              }
+            },
+            itemBuilder: (context) => [
+              PopupMenuItem<int>(
+                value: 0,
+                child: Text("Ingredients"),
+              ),
+              PopupMenuItem<int>(
+                value: 1,
+                child: Text("Measurements"),
+              ),
+            ],
+          )
+        ],
+      ),
+      body: Padding(
+        padding: EdgeInsets.all(16.0),
+        child: Form(
+          key: _formKey,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(children: [
+                Expanded(
+                  child: _isNew
+                  // TODO: Search
+                  ? DropdownSearch<IngredientModel>(
+                    items: (filter, loadProps) => AppDatabase.ingredients,
+                    selectedItem: _ingredient,
+                    compareFn: (item1, item2) => item1.id! == item2.id!,
+                    itemAsString: (item) => item.name,
+                    filterFn: (item, filter)
+                      => item.name.toLowerCase().contains(filter.toLowerCase()),
+                    decoratorProps: DropDownDecoratorProps(
+                      decoration: InputDecoration(labelText: "Ingredient")
+                    ),
+                    validator: (value) {
+                      if (value == null) {
+                        return "Please select an ingredient";
+                      }
+                      return null;
+                    },
+                    onSaved: (newValue) => _ingredient = newValue,
+                  )
+                  : Text(_ingredient!.name),
+                )
+              ]),
+              TextFormField(
+                maxLength: 100,
+                decoration: InputDecoration(labelText: "Label"),
+                initialValue: _label,
+                validator: (value) {
+                  if (value == null || value.isEmpty) {
+                    return "Please provide a label";
+                  }
+                  return null;
+                },
+                onSaved: (newValue) => _label = newValue!,
+              ),
+              TextFormField(
+                maxLength: 250,
+                maxLines: 3,
+                decoration: InputDecoration(labelText: "Description"),
+                initialValue: _description,
+                validator: (value) {
+                  if (value == null || value.isEmpty) {
+                    return "Please provide a description";
+                  }
+                  return null;
+                },
+                onSaved: (newValue) => _description = newValue!,
+              ),
+              Row(children: [
+                Expanded(
+                  child: _isNew
+                  // TODO: Search
+                  ? DropdownSearch<MeasurementModel>(
+                    items: (filter, loadProps) => AppDatabase.measurements,
+                    selectedItem: _measurement,
+                    compareFn: (item1, item2) => item1.id! == item2.id!,
+                    itemAsString: (item) => item.label,
+                    filterFn: (item, filter) => item.label.contains(filter),
+                    decoratorProps: DropDownDecoratorProps(
+                        decoration: InputDecoration(labelText: "Measurement")
+                    ),
+                    validator: (value) {
+                      if (value == null) {
+                        return "Please select a measurement";
+                      }
+                      return null;
+                    },
+                    onSaved: (newValue) => _measurement = newValue,
+                  )
+                  : Text(_measurement!.label),
+                )
+              ]),
+              TextFormField(
+                keyboardType: TextInputType.numberWithOptions(
+                  signed: false,
+                  decimal: true
+                ),
+                inputFormatters: [
+                  TextInputFormatter.withFunction((oldValue, newValue) {
+                    if (newValue.text.isNotEmpty && double.tryParse(newValue.text) == null) {
+                      return oldValue;
+                    }
+                    return newValue;
+                  }),
+                ],
+                decoration: InputDecoration(labelText: "Value"),
+                initialValue: _measurementValue.toString(),
+                validator: (value) {
+                  if (value == null || value.isEmpty) {
+                    return "Please provide a value";
+                  }
+                  return null;
+                },
+                onSaved: (newValue) => _measurementValue = newValue!,
+              ),
+            ],
+          ),
+        ),
+      ),
+      floatingActionButton: FloatingActionButton(
+        onPressed: () {
+          if (_formKey.currentState!.validate()) {
+            _formKey.currentState!.save();
+            saveChanges(context);
+          }
+        },
+        child: Icon(CupertinoIcons.checkmark_alt),
       ),
     );
   }
