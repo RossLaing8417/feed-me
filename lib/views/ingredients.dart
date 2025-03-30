@@ -101,7 +101,7 @@ class _AppIngredientsViewState extends State<AppIngredientsView> {
                   itemCount: _ingredients.length,
                   itemBuilder: (context, index) {
                     final ingredient = _ingredients[index];
-                    return Expanded(child: Card(
+                    return Card(
                       child: ListTile(
                         onTap: () => editIngredient(ingredient.id!),
                         onLongPress: () => openDeleteDialog(ingredient.id!),
@@ -110,7 +110,7 @@ class _AppIngredientsViewState extends State<AppIngredientsView> {
                         subtitle: Text(ingredient.frequency.toString()),
                         subtitleTextStyle: Theme.of(context).textTheme.titleSmall,
                       ),
-                    ));
+                    );
                   },
                 ),
               ),

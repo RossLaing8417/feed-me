@@ -122,13 +122,13 @@ class _AppRecipesViewState extends State<AppRecipesView> {
                       onTap: () => viewRecipe(context, recipe.id!),
                       title: Text(recipe.name),
                       titleTextStyle: Theme.of(context).textTheme.headlineMedium,
-                      subtitle: Expanded(child: Row(
+                      subtitle: Row(
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
                           StarRating(rating: recipe.rating.toDouble()),
                           Text(recipe.cookingTime),
                         ],
-                      )),
+                      ),
                     ),
                   );
                 },
@@ -156,7 +156,7 @@ class AppRecipeView extends StatefulWidget {
 }
 
 class _AppRecipeViewState extends State<AppRecipeView> {
-  late RecipeModel _recipe;
+  RecipeModel? _recipe;
   List<RecipeIngredientModel> _ingredients = [];
   List<MeasurementModel> _measurements = [];
 
@@ -204,26 +204,26 @@ class _AppRecipeViewState extends State<AppRecipeView> {
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
           Text(
-            _recipe.name,
+            _recipe?.name ?? "",
             style: Theme.of(context).textTheme.headlineLarge,
           ),
           Text(
-            _recipe.description,
+            _recipe?.description ?? "",
             style: Theme.of(context).textTheme.bodyLarge,
           ),
           Text(
-            _recipe.cookingTime,
+            _recipe?.cookingTime ?? "",
             style: Theme.of(context).textTheme.bodyMedium,
           ),
           Text(
-            _recipe.weekday.toString(),
+            _recipe?.weekday.toString() ?? "",
             style: Theme.of(context).textTheme.bodyMedium,
           ),
           StarRating(
-            rating: _recipe.rating.toDouble(),
+            rating: _recipe?.rating.toDouble() ?? 0.0,
           ),
           Text(
-            _recipe.frequency.toString(),
+            _recipe?.frequency.toString() ?? "",
             style: Theme.of(context).textTheme.bodyMedium,
           ),
           Divider(height: 32.0),
@@ -276,7 +276,7 @@ class _AppRecipeViewState extends State<AppRecipeView> {
       floatingActionButton: FloatingActionButton(
         onPressed: () => Navigator.push(
           context,
-          MaterialPageRoute(builder: (context) => AppRecipeEditView(id: _recipe.id)),
+          MaterialPageRoute(builder: (context) => AppRecipeEditView(id: _recipe!.id)),
         ).then((value) => refresh()),
         tooltip: "Edit",
         child: const Icon(CupertinoIcons.pencil),

@@ -100,7 +100,7 @@ class _AppMeasurementsViewState extends State<AppMeasurementsView> {
                   itemCount: _measurements.length,
                   itemBuilder: (context, index) {
                     final measurement = _measurements[index];
-                    return Expanded(child: Card(
+                    return Card(
                       child: ListTile(
                         onTap: () => editMeasurement(measurement.id!),
                         onLongPress: () => openDeleteDialog(measurement.id!),
@@ -109,7 +109,7 @@ class _AppMeasurementsViewState extends State<AppMeasurementsView> {
                         subtitle: Text(measurement.description),
                         subtitleTextStyle: Theme.of(context).textTheme.titleSmall,
                       ),
-                    ));
+                    );
                   },
                 ),
               ),
