@@ -33,12 +33,14 @@ class AppDatabase {
 
   static initDatabase() async {
     assert(_db == null, "Database already initialized");
-    _db = _db ?? await openDatabase(
-      await dbPath,
-      version: 1,
-      onCreate: _createDatabase,
-      onUpgrade: _upgradeDatabase,
-    );
+    _db =
+        _db ??
+        await openDatabase(
+          await dbPath,
+          version: 1,
+          onCreate: _createDatabase,
+          onUpgrade: _upgradeDatabase,
+        );
   }
 
   static Future _createDatabase(Database db, int version) async {
@@ -56,11 +58,14 @@ class AppDatabase {
   }
 
   static Future<void> _upgradeDatabase(
-      Database db,
-      int oldVersion,
-      int newVersion,
+    Database db,
+    int oldVersion,
+    int newVersion,
   ) async {
-    assert(newVersion > oldVersion, "New version must be greater than old version");
+    assert(
+      newVersion > oldVersion,
+      "New version must be greater than old version",
+    );
     for (var version = oldVersion + 1; oldVersion <= newVersion; version += 1) {
       final sql = """
         ${IngredientTable.onUpgrade(version)}
@@ -81,13 +86,14 @@ class AppDatabase {
     }
     initDatabase();
   }
+
   // <<< TEMP
 
   // TODO: AND/OR grouping
   static Future<List<Map<String, Object?>>> _fetchRecords(
-    String table,
-    [QueryOpts? queryOpts]
-  ) async {
+    String table, [
+    QueryOpts? queryOpts,
+  ]) async {
     final opts = queryOpts ?? QueryOpts();
     final filterQuery = <String>[];
     final filterValues = <Object>[];
@@ -95,10 +101,18 @@ class AppDatabase {
       filterQuery.add("${filter.field} ${filter.operator} ?");
       filterValues.add(filter.value);
     }
-    final sortClause = opts.sorting.fold("", (value, element)
-      => "${value.isEmpty ? "" : ", "}${element.field} ${element.ascending ? "ASC" : "DESC"}");
-    final where = filterQuery.isEmpty ? null : filterQuery.fold("", (value, element)
-      => "${value.isEmpty ? "" : " AND "} $element");
+    final sortClause = opts.sorting.fold(
+      "",
+      (value, element) =>
+          "${value.isEmpty ? "" : ", "}${element.field} ${element.ascending ? "ASC" : "DESC"}",
+    );
+    final where =
+        filterQuery.isEmpty
+            ? null
+            : filterQuery.fold(
+              "",
+              (value, element) => "${value.isEmpty ? "" : " AND "} $element",
+            );
     final whereArgs = filterValues.isEmpty ? null : filterValues;
     final orderBy = sortClause.isEmpty ? null : sortClause;
     return (await db).query(
@@ -116,53 +130,55 @@ class AppDatabase {
   ) async {
     late bool valid;
     switch (fieldValue) {
-      case int val: valid = val > 0;
-      case String val: valid = val.isNotEmpty;
+      case int val:
+        valid = val > 0;
+      case String val:
+        valid = val.isNotEmpty;
     }
-    assert(valid, "Attempt to find a record with an invalid $fieldName: $fieldValue");
-    final results = await _fetchRecords(table, QueryOpts(
-        filtering: [FilterField(field: fieldName, value: fieldValue)]
-    ));
-    assert(results.isNotEmpty, "Could not any '$table' with the id: $fieldValue");
-    assert(results.length == 1, "Found too many '$table' with the id: $fieldValue");
+    assert(
+      valid,
+      "Attempt to find a record with an invalid $fieldName: $fieldValue",
+    );
+    final results = await _fetchRecords(
+      table,
+      QueryOpts(filtering: [FilterField(field: fieldName, value: fieldValue)]),
+    );
+    assert(
+      results.isNotEmpty,
+      "Could not any '$table' with the id: $fieldValue",
+    );
+    assert(
+      results.length == 1,
+      "Found too many '$table' with the id: $fieldValue",
+    );
     return Future.value(results[0]);
   }
 
-  static Future<List<IngredientModel>> fetchIngredients(
-      [QueryOpts? queryOpts]
-      ) async {
+  static Future<List<IngredientModel>> fetchIngredients([
+    QueryOpts? queryOpts,
+  ]) async {
     final records = await _fetchRecords(IngredientTable.name, queryOpts);
     return records.map((e) => IngredientModel.fromMap(e)).toList();
   }
 
   static Future<IngredientModel> getIngredientById(int id) async {
-    return IngredientModel.fromMap(await _findRecord(
-        IngredientTable.name,
-        IngredientFields.id,
-        id
-    ));
+    return IngredientModel.fromMap(
+      await _findRecord(IngredientTable.name, IngredientFields.id, id),
+    );
   }
 
   static Future<IngredientModel> getIngredientByName(String name) async {
-    return IngredientModel.fromMap(await _findRecord(
-        IngredientTable.name,
-        IngredientFields.name,
-        name
-    ));
+    return IngredientModel.fromMap(
+      await _findRecord(IngredientTable.name, IngredientFields.name, name),
+    );
   }
 
   static Future<IngredientModel> createIngredient({
     required String name,
     required int frequency,
   }) async {
-    var model = IngredientModel(
-      name: name,
-      frequency: frequency,
-    );
-    final id = await (await db).insert(
-      IngredientTable.name,
-      model.toMap(),
-    );
+    var model = IngredientModel(name: name, frequency: frequency);
+    final id = await (await db).insert(IngredientTable.name, model.toMap());
     assert(id > 0, "Failed to create ingredient");
     return getIngredientById(id);
   }
@@ -173,11 +189,7 @@ class AppDatabase {
     required int frequency,
   }) async {
     var model = await getIngredientById(id);
-    model = IngredientModel(
-      id: model.id,
-      name: name,
-      frequency: frequency,
-    );
+    model = IngredientModel(id: model.id, name: name, frequency: frequency);
     await (await db).update(
       IngredientTable.name,
       model.toMap(),
@@ -196,41 +208,31 @@ class AppDatabase {
     );
   }
 
-  static Future<List<MeasurementModel>> fetchMeasurements(
-    [QueryOpts? queryOpts]
-  ) async {
+  static Future<List<MeasurementModel>> fetchMeasurements([
+    QueryOpts? queryOpts,
+  ]) async {
     final records = await _fetchRecords(MeasurementTable.name, queryOpts);
     return records.map((e) => MeasurementModel.fromMap(e)).toList();
   }
 
   static Future<MeasurementModel> getMeasurementById(int id) async {
-    return MeasurementModel.fromMap(await _findRecord(
-        MeasurementTable.name,
-        MeasurementFields.id,
-        id
-    ));
+    return MeasurementModel.fromMap(
+      await _findRecord(MeasurementTable.name, MeasurementFields.id, id),
+    );
   }
 
   static Future<MeasurementModel> getMeasurementByLabel(String label) async {
-    return MeasurementModel.fromMap(await _findRecord(
-        MeasurementTable.name,
-        MeasurementFields.label,
-        label
-    ));
+    return MeasurementModel.fromMap(
+      await _findRecord(MeasurementTable.name, MeasurementFields.label, label),
+    );
   }
 
   static Future<MeasurementModel> createMeasurement({
     required String label,
     required String description,
   }) async {
-    var model = MeasurementModel(
-      label: label,
-      description: description,
-    );
-    final id = await (await db).insert(
-      MeasurementTable.name,
-      model.toMap(),
-    );
+    var model = MeasurementModel(label: label, description: description);
+    final id = await (await db).insert(MeasurementTable.name, model.toMap());
     return getMeasurementById(id);
   }
 
@@ -263,27 +265,21 @@ class AppDatabase {
     );
   }
 
-  static Future<List<RecipeModel>> fetchRecipes(
-    [QueryOpts? queryOpts]
-  ) async {
+  static Future<List<RecipeModel>> fetchRecipes([QueryOpts? queryOpts]) async {
     final records = await _fetchRecords(RecipeTable.name, queryOpts);
     return records.map((e) => RecipeModel.fromMap(e)).toList();
   }
 
   static Future<RecipeModel> getRecipeById(int id) async {
-    return RecipeModel.fromMap(await _findRecord(
-        RecipeTable.name,
-        RecipeFields.id,
-        id
-    ));
+    return RecipeModel.fromMap(
+      await _findRecord(RecipeTable.name, RecipeFields.id, id),
+    );
   }
 
   static Future<RecipeModel> getRecipeByName(String name) async {
-    return RecipeModel.fromMap(await _findRecord(
-        RecipeTable.name,
-        RecipeFields.name,
-        name
-    ));
+    return RecipeModel.fromMap(
+      await _findRecord(RecipeTable.name, RecipeFields.name, name),
+    );
   }
 
   static Future<RecipeModel> createRecipe({
@@ -304,10 +300,7 @@ class AppDatabase {
       rating: rating,
       frequency: frequency,
     );
-    final id = await (await db).insert(
-      RecipeTable.name,
-      model.toMap(),
-    );
+    final id = await (await db).insert(RecipeTable.name, model.toMap());
     return getRecipeById(id);
   }
 
@@ -350,19 +343,21 @@ class AppDatabase {
     );
   }
 
-  static Future<List<RecipeIngredientModel>> fetchRecipeIngredients(
-      [QueryOpts? queryOpts]
-      ) async {
+  static Future<List<RecipeIngredientModel>> fetchRecipeIngredients([
+    QueryOpts? queryOpts,
+  ]) async {
     final records = await _fetchRecords(RecipeIngredientTable.name, queryOpts);
     return records.map((e) => RecipeIngredientModel.fromMap(e)).toList();
   }
 
   static Future<RecipeIngredientModel> getRecipeIngredientById(int id) async {
-    return RecipeIngredientModel.fromMap(await _findRecord(
+    return RecipeIngredientModel.fromMap(
+      await _findRecord(
         RecipeIngredientTable.name,
         RecipeIngredientFields.id,
-        id
-    ));
+        id,
+      ),
+    );
   }
 
   static Future<RecipeIngredientModel> createRecipeIngredient({
@@ -417,7 +412,7 @@ class AppDatabase {
     final _ = await getRecipeIngredientById(id);
     await (await db).delete(
       RecipeIngredientTable.name,
-      where: "${RecipeIngredientTable.name}",
+      where: "${RecipeIngredientFields.id} = ?",
       whereArgs: [id],
     );
   }
@@ -426,14 +421,17 @@ class AppDatabase {
 class QueryOpts {
   final List<FilterField> filtering;
   final List<SortField> sorting;
+
   QueryOpts({List<FilterField>? filtering, List<SortField>? sorting})
-    : filtering = filtering ?? [], sorting = sorting ?? [];
+    : filtering = filtering ?? [],
+      sorting = sorting ?? [];
 }
 
 class FilterField {
   final String field;
   final String operator;
   final Object value;
+
   FilterField({required this.field, this.operator = "==", required this.value});
 
   static final eq = "==";
@@ -448,5 +446,6 @@ class FilterField {
 class SortField {
   final String field;
   final bool ascending;
+
   SortField({required this.field, this.ascending = true});
 }

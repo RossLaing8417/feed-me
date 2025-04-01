@@ -1,23 +1,30 @@
 class RecipeFields {
   /// Unique identifier
   static const id = "id";
+
   /// Recipe name
   static const name = "name";
+
   /// Recipe description
   static const description = "description";
+
   /// Approximate total time it takes to prepare and cook
   static const cookingTime = "cooking_time";
+
   /// Times of day the recipe if for (breakfast, lunch, supper)
   static const mealTime = "meal_time";
+
   /// Days of the week the recipe is for
   static const weekday = "week_day";
+
   /// Personal rating
   static const rating = "rating";
+
   /// Frequency rating to indicate the recipe repetitiveness
   /// A higher frequency recipe will appear more than a lower
   static const frequency = "frequency";
 
-  static List<String> get columns => [
+  static const columns = [
     id,
     name,
     description,
@@ -37,8 +44,9 @@ class RecipeTable {
   static const dateTimeType = "INTEGER NOT NULL";
 
   static String onCreate(int version) {
-    switch(version) {
-      case 1: return """
+    switch (version) {
+      case 1:
+        return """
         CREATE TABLE $name (
           ${RecipeFields.id} $idType
         , ${RecipeFields.name} $textType
@@ -57,7 +65,7 @@ class RecipeTable {
   }
 
   static String onUpgrade(int version) {
-    switch(version) {
+    switch (version) {
       default:
         assert(false, "Unimplemented upgrade version: $version");
     }

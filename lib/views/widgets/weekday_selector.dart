@@ -13,33 +13,35 @@ class WeekdaySelector extends FormField<Weekday> {
     super.restorationId,
     InputDecoration? decoration,
   }) : super(
-    builder: (field) {
-      final text = <String>[];
-      final selected = <bool>[];
-      for (var i = 1; i <= 7; i += 1) {
-        text.add(Weekday.fromDay(i).toString());
-        selected.add(field.value?.hasDay(i) ?? false);
-      }
-      return Row(
-        children: [
-          Expanded(
-            child: InputDecorator(
-              decoration: (decoration ?? InputDecoration()).copyWith(errorText: field.errorText),
-              child: ToggleButtons(
-                isSelected: selected,
-                children: text.map((e) => Text(e[0])).toList(),
-                onPressed: (index) {
-                  final weekday = field.value ?? Weekday.none;
-                  weekday.toggleDay(index + 1);
-                  field.didChange(weekday);
-                },
-              ),
-            ),
-          ),
-        ],
-      );
-    },
-  );
+         builder: (field) {
+           final text = <String>[];
+           final selected = <bool>[];
+           for (var i = 1; i <= 7; i += 1) {
+             text.add(Weekday.fromDay(i).toString());
+             selected.add(field.value?.hasDay(i) ?? false);
+           }
+           return Row(
+             children: [
+               Expanded(
+                 child: InputDecorator(
+                   decoration: (decoration ?? InputDecoration()).copyWith(
+                     errorText: field.errorText,
+                   ),
+                   child: ToggleButtons(
+                     isSelected: selected,
+                     children: text.map((e) => Text(e[0])).toList(),
+                     onPressed: (index) {
+                       final weekday = field.value ?? Weekday.none;
+                       weekday.toggleDay(index + 1);
+                       field.didChange(weekday);
+                     },
+                   ),
+                 ),
+               ),
+             ],
+           );
+         },
+       );
 }
 
 /*

@@ -1,10 +1,14 @@
 class MeasurementFields {
   /// Unique identifier
   static const id = "id";
+
   /// Measurement label (e.g kg, tsp, ml)
   static const label = "label";
+
   /// Measurement description (e.g kilogram, teaspoon, milli-litre)
   static const description = "description";
+
+  static const columns = [id, label, description];
 }
 
 class MeasurementTable {
@@ -14,7 +18,8 @@ class MeasurementTable {
 
   static String onCreate(int version) {
     switch (version) {
-      case 1: return """
+      case 1:
+        return """
         CREATE TABLE $name (
           ${MeasurementFields.id} $idType
         , ${MeasurementFields.label} $textType

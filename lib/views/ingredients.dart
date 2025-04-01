@@ -25,17 +25,19 @@ class _AppIngredientsViewState extends State<AppIngredientsView> {
       _searchDebounce?.cancel();
     }
     _searchDebounce = Timer(Duration(milliseconds: 200), () async {
-      final ingredients = await AppDatabase.fetchIngredients(QueryOpts(
-        filtering:  [
-          if (filter.isNotEmpty)
-            FilterField(
-              field: IngredientFields.name,
-              operator: FilterField.like,
-              value: "%${filter.replaceAll(" ", "%")}%",
-            ),
-        ],
-        sorting: [SortField(field: IngredientFields.name)],
-      ));
+      final ingredients = await AppDatabase.fetchIngredients(
+        QueryOpts(
+          filtering: [
+            if (filter.isNotEmpty)
+              FilterField(
+                field: IngredientFields.name,
+                operator: FilterField.like,
+                value: "%${filter.replaceAll(" ", "%")}%",
+              ),
+          ],
+          sorting: [SortField(field: IngredientFields.name)],
+        ),
+      );
       setState(() {
         _ingredients = ingredients;
         _searchDebounce = null;
@@ -47,8 +49,8 @@ class _AppIngredientsViewState extends State<AppIngredientsView> {
 
   editIngredient([int? id]) async {
     await Navigator.push(
-        context,
-        MaterialPageRoute(builder: (context) => AppIngredientEditView(id: id))
+      context,
+      MaterialPageRoute(builder: (context) => AppIngredientEditView(id: id)),
     );
     search();
   }
@@ -95,24 +97,28 @@ class _AppIngredientsViewState extends State<AppIngredientsView> {
             ),
             Expanded(
               child: Center(
-                child: _ingredients.isEmpty
-                ? Text("No ingredients found...")
-                : ListView.builder(
-                  itemCount: _ingredients.length,
-                  itemBuilder: (context, index) {
-                    final ingredient = _ingredients[index];
-                    return Card(
-                      child: ListTile(
-                        onTap: () => editIngredient(ingredient.id!),
-                        onLongPress: () => openDeleteDialog(ingredient.id!),
-                        title: Text(ingredient.name),
-                        titleTextStyle: Theme.of(context).textTheme.titleLarge,
-                        subtitle: Text(ingredient.frequency.toString()),
-                        subtitleTextStyle: Theme.of(context).textTheme.titleSmall,
-                      ),
-                    );
-                  },
-                ),
+                child:
+                    _ingredients.isEmpty
+                        ? Text("No ingredients found...")
+                        : ListView.builder(
+                          itemCount: _ingredients.length,
+                          itemBuilder: (context, index) {
+                            final ingredient = _ingredients[index];
+                            return Card(
+                              child: ListTile(
+                                onTap: () => editIngredient(ingredient.id!),
+                                onLongPress:
+                                    () => openDeleteDialog(ingredient.id!),
+                                title: Text(ingredient.name),
+                                titleTextStyle:
+                                    Theme.of(context).textTheme.titleLarge,
+                                subtitle: Text(ingredient.frequency.toString()),
+                                subtitleTextStyle:
+                                    Theme.of(context).textTheme.titleSmall,
+                              ),
+                            );
+                          },
+                        ),
               ),
             ),
           ],
@@ -122,35 +128,37 @@ class _AppIngredientsViewState extends State<AppIngredientsView> {
         onPressed: () => editIngredient(),
         tooltip: "Add ingredient",
         child: Icon(CupertinoIcons.add),
-      )
+      ),
     );
   }
 
   Future openDeleteDialog(int id) {
     return showDialog(
       context: context,
-      builder: (context) => AlertDialog(
-        title: Text("Are you sure you want to delete this ingredient?"),
-        actions: [
-          FilledButton(
-            onPressed: () {
-              deleteIngredient(id);
-              Navigator.of(context).pop();
-            },
-            child: Text("Delete"),
+      builder:
+          (context) => AlertDialog(
+            title: Text("Are you sure you want to delete this ingredient?"),
+            actions: [
+              FilledButton(
+                onPressed: () {
+                  deleteIngredient(id);
+                  Navigator.of(context).pop();
+                },
+                child: Text("Delete"),
+              ),
+              TextButton(
+                onPressed: () => Navigator.of(context).pop(),
+                child: Text("Cancel"),
+              ),
+            ],
           ),
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(),
-            child: Text("Cancel"),
-          ),
-        ],
-      ),
     );
   }
 }
 
 class AppIngredientEditView extends StatefulWidget {
   final int? id;
+
   const AppIngredientEditView({super.key, this.id});
 
   @override
@@ -180,16 +188,17 @@ class _AppIngredientEditViewState extends State<AppIngredientEditView> {
   }
 
   saveChanges(context) async {
-    final _ = _isNew
-      ? await AppDatabase.createIngredient(
-        name: _name,
-        frequency: _frequency,
-      )
-      : await AppDatabase.updateIngredient(
-        id: widget.id!,
-        name: _name,
-        frequency: _frequency,
-      );
+    final _ =
+        _isNew
+            ? await AppDatabase.createIngredient(
+              name: _name,
+              frequency: _frequency,
+            )
+            : await AppDatabase.updateIngredient(
+              id: widget.id!,
+              name: _name,
+              frequency: _frequency,
+            );
     Navigator.pop(context);
   }
 

@@ -24,17 +24,19 @@ class _AppMeasurementsViewState extends State<AppMeasurementsView> {
       _searchDebounce?.cancel();
     }
     _searchDebounce = Timer(Duration(milliseconds: 200), () async {
-      final measurements = await AppDatabase.fetchMeasurements(QueryOpts(
-        filtering: [
-          if (filter.isNotEmpty)
-            FilterField(
+      final measurements = await AppDatabase.fetchMeasurements(
+        QueryOpts(
+          filtering: [
+            if (filter.isNotEmpty)
+              FilterField(
                 field: MeasurementFields.label,
                 operator: FilterField.like,
-                value: "%${filter.replaceAll(" ", "%")}%"
-            ),
-        ],
-        sorting: [SortField(field: MeasurementFields.label)],
-      ));
+                value: "%${filter.replaceAll(" ", "%")}%",
+              ),
+          ],
+          sorting: [SortField(field: MeasurementFields.label)],
+        ),
+      );
       setState(() {
         _measurements = measurements;
         _searchDebounce = null;
@@ -94,24 +96,28 @@ class _AppMeasurementsViewState extends State<AppMeasurementsView> {
             ),
             Expanded(
               child: Center(
-                child: _measurements.isEmpty
-                ? Text("No measurements found")
-                : ListView.builder(
-                  itemCount: _measurements.length,
-                  itemBuilder: (context, index) {
-                    final measurement = _measurements[index];
-                    return Card(
-                      child: ListTile(
-                        onTap: () => editMeasurement(measurement.id!),
-                        onLongPress: () => openDeleteDialog(measurement.id!),
-                        title: Text(measurement.label),
-                        titleTextStyle: Theme.of(context).textTheme.titleLarge,
-                        subtitle: Text(measurement.description),
-                        subtitleTextStyle: Theme.of(context).textTheme.titleSmall,
-                      ),
-                    );
-                  },
-                ),
+                child:
+                    _measurements.isEmpty
+                        ? Text("No measurements found")
+                        : ListView.builder(
+                          itemCount: _measurements.length,
+                          itemBuilder: (context, index) {
+                            final measurement = _measurements[index];
+                            return Card(
+                              child: ListTile(
+                                onTap: () => editMeasurement(measurement.id!),
+                                onLongPress:
+                                    () => openDeleteDialog(measurement.id!),
+                                title: Text(measurement.label),
+                                titleTextStyle:
+                                    Theme.of(context).textTheme.titleLarge,
+                                subtitle: Text(measurement.description),
+                                subtitleTextStyle:
+                                    Theme.of(context).textTheme.titleSmall,
+                              ),
+                            );
+                          },
+                        ),
               ),
             ),
           ],
@@ -128,28 +134,30 @@ class _AppMeasurementsViewState extends State<AppMeasurementsView> {
   Future openDeleteDialog(int id) {
     return showDialog(
       context: context,
-      builder: (context) => AlertDialog(
-        title: Text("Are you sure you want to delete this measurement"),
-        actions: [
-          FilledButton(
-            onPressed: () {
-              deleteMeasurement(id);
-              Navigator.of(context).pop();
-            },
-            child: Text("Delete"),
+      builder:
+          (context) => AlertDialog(
+            title: Text("Are you sure you want to delete this measurement"),
+            actions: [
+              FilledButton(
+                onPressed: () {
+                  deleteMeasurement(id);
+                  Navigator.of(context).pop();
+                },
+                child: Text("Delete"),
+              ),
+              TextButton(
+                onPressed: () => Navigator.of(context).pop(),
+                child: Text("Cancel"),
+              ),
+            ],
           ),
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(),
-            child: Text("Cancel"),
-          ),
-        ],
-      ),
     );
   }
 }
 
 class AppMeasurementEditView extends StatefulWidget {
   final int? id;
+
   const AppMeasurementEditView({super.key, this.id});
 
   @override
@@ -163,7 +171,7 @@ class _AppMeasurementEditViewState extends State<AppMeasurementEditView> {
   String _label = "";
   String _description = "";
 
-  refresh () async {
+  refresh() async {
     if (widget.id == null) {
       setState(() {
         _isNew = true;
@@ -178,16 +186,17 @@ class _AppMeasurementEditViewState extends State<AppMeasurementEditView> {
   }
 
   saveChanges(context) async {
-    final _ = _isNew
-      ? await AppDatabase.createMeasurement(
-        label: _label,
-        description: _description,
-      )
-      : await AppDatabase.updateMeasurement(
-        id: widget.id!,
-        label: _label,
-        description: _description,
-      );
+    final _ =
+        _isNew
+            ? await AppDatabase.createMeasurement(
+              label: _label,
+              description: _description,
+            )
+            : await AppDatabase.updateMeasurement(
+              id: widget.id!,
+              label: _label,
+              description: _description,
+            );
     Navigator.pop(context);
   }
 

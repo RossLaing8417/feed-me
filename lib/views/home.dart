@@ -16,8 +16,16 @@ class _AppHomeViewState extends State<AppHomeView> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              AppRecipeCard(title: "Some Food", cookTime: "Long", rating: "123"),
-              AppRecipeCard(title: "More Food", cookTime: "Short", rating: "avg")
+              AppRecipeCard(
+                title: "Some Food",
+                cookTime: "Long",
+                rating: "123",
+              ),
+              AppRecipeCard(
+                title: "More Food",
+                cookTime: "Short",
+                rating: "avg",
+              ),
             ],
           ),
         ),
@@ -30,9 +38,11 @@ class AppRecipeCard extends StatelessWidget {
   final String title;
   final String rating;
   final String cookTime;
-  final String thumbnailUrl = "https://images.unsplash.com/photo-1498837167922-ddd27525d352?fm=jpg&q=60&w=3000&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxzZWFyY2h8MTB8fHJhbmRvbSUyMGZvb2QlMjBzdG9yZXxlbnwwfHwwfHx8MA%3D%3D";
+  final String thumbnailUrl =
+      "https://images.unsplash.com/photo-1498837167922-ddd27525d352?fm=jpg&q=60&w=3000&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxzZWFyY2h8MTB8fHJhbmRvbSUyMGZvb2QlMjBzdG9yZXxlbnwwfHwwfHx8MA%3D%3D";
 
-  const AppRecipeCard({super.key,
+  const AppRecipeCard({
+    super.key,
     required this.title,
     required this.cookTime,
     required this.rating,
@@ -54,7 +64,7 @@ class AppRecipeCard extends StatelessWidget {
             offset: Offset(0.0, 10.0),
             blurRadius: 10.0,
             spreadRadius: -6.0,
-          )
+          ),
         ],
         image: DecorationImage(
           colorFilter: ColorFilter.mode(

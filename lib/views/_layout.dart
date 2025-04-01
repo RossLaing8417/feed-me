@@ -21,11 +21,7 @@ class _AppLayoutState extends State<AppLayout> {
 
   @override
   void initState() {
-    page = [
-      AppHomeView(),
-      AppMealPlannerView(),
-      AppRecipesView(),
-    ];
+    page = [AppHomeView(), AppMealPlannerView(), AppRecipesView()];
     super.initState();
   }
 
@@ -36,36 +32,35 @@ class _AppLayoutState extends State<AppLayout> {
         actions: [
           PopupMenuButton<int>(
             onSelected: (value) {
-              switch(value) {
-                case 0: Navigator.push(
+              switch (value) {
+                case 0:
+                  Navigator.push(
                     context,
-                    MaterialPageRoute(builder: (context) => AppIngredientsView())
-                );
-                case 1: Navigator.push(
-                  context,
-                    MaterialPageRoute(builder: (context) => AppMeasurementsView())
-                );
-                case 99: setState(() {
-                  AppDatabase.reset();
-                });
+                    MaterialPageRoute(
+                      builder: (context) => AppIngredientsView(),
+                    ),
+                  );
+                case 1:
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => AppMeasurementsView(),
+                    ),
+                  );
+                case 99:
+                  setState(() {
+                    AppDatabase.reset();
+                  });
               }
             },
-            itemBuilder: (context) => [
-              PopupMenuItem<int>(
-                value: 0,
-                child: Text("Ingredients"),
-              ),
-              PopupMenuItem<int>(
-                value: 1,
-                child: Text("Measurements"),
-              ),
-              if (kDebugMode)
-                PopupMenuItem<int>(
-                  value: 99,
-                  child: Text("Reset"),
-                ),
-            ],
-          )
+            itemBuilder:
+                (context) => [
+                  PopupMenuItem<int>(value: 0, child: Text("Ingredients")),
+                  PopupMenuItem<int>(value: 1, child: Text("Measurements")),
+                  if (kDebugMode)
+                    PopupMenuItem<int>(value: 99, child: Text("Reset")),
+                ],
+          ),
         ],
       ),
       body: page[index],
@@ -80,15 +75,23 @@ class _AppLayoutState extends State<AppLayout> {
         items: [
           BottomNavigationBarItem(
             label: "Home",
-            icon: Icon(index == 0 ? CupertinoIcons.house_fill : CupertinoIcons.house),
+            icon: Icon(
+              index == 0 ? CupertinoIcons.house_fill : CupertinoIcons.house,
+            ),
           ),
           BottomNavigationBarItem(
             label: "Meal Planner",
-            icon: Icon(index == 1 ? CupertinoIcons.calendar_today : CupertinoIcons.calendar),
+            icon: Icon(
+              index == 1
+                  ? CupertinoIcons.calendar_today
+                  : CupertinoIcons.calendar,
+            ),
           ),
           BottomNavigationBarItem(
             label: "Recipes",
-            icon: Icon(index == 2 ? CupertinoIcons.book_fill : CupertinoIcons.book),
+            icon: Icon(
+              index == 2 ? CupertinoIcons.book_fill : CupertinoIcons.book,
+            ),
           ),
         ],
       ),

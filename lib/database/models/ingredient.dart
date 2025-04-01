@@ -5,23 +5,15 @@ class IngredientModel {
   final String name;
   final int frequency;
 
-  const IngredientModel({
-    this.id,
-    required this.name,
-    required this.frequency,
-  });
+  const IngredientModel({this.id, required this.name, required this.frequency});
 
-  factory IngredientModel.fromMap(Map<String, Object?> map)
-    => IngredientModel(
-      id: map[IngredientFields.id] as int?,
-      name: map[IngredientFields.name] as String,
-      frequency: map[IngredientFields.frequency] as int,
-    );
+  factory IngredientModel.fromMap(Map<String, Object?> map) => IngredientModel(
+    id: map[IngredientFields.id] as int?,
+    name: map[IngredientFields.name] as String,
+    frequency: map[IngredientFields.frequency] as int,
+  );
 
   Map<String, Object?> toMap() {
-    return {
-      IngredientFields.name: name,
-      IngredientFields.frequency: frequency,
-    };
+    return {IngredientFields.name: name, IngredientFields.frequency: frequency};
   }
 }

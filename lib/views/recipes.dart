@@ -36,20 +36,23 @@ class _AppRecipesViewState extends State<AppRecipesView> {
       _searchDebounce?.cancel();
     }
     _searchDebounce = Timer(Duration(milliseconds: 200), () async {
-      _recipes = await AppDatabase.fetchRecipes(QueryOpts(
-        filtering: [
-          if (filter.isNotEmpty)
-            FilterField(
-              field: RecipeFields.name,
-              operator: FilterField.like,
-              value: "%${filter.replaceAll(" ", "%")}%",
-            ),
-        ],
-        sorting: [SortField(field: RecipeFields.name)],
-      ));
+      _recipes = await AppDatabase.fetchRecipes(
+        QueryOpts(
+          filtering: [
+            if (filter.isNotEmpty)
+              FilterField(
+                field: RecipeFields.name,
+                operator: FilterField.like,
+                value: "%${filter.replaceAll(" ", "%")}%",
+              ),
+          ],
+          sorting: [SortField(field: RecipeFields.name)],
+        ),
+      );
       setState(() {
-        _recipes.sort((a,b)
-          => a.name.toLowerCase().compareTo(b.name.toLowerCase()));
+        _recipes.sort(
+          (a, b) => a.name.toLowerCase().compareTo(b.name.toLowerCase()),
+        );
         _searchDebounce = null;
       });
     });
@@ -90,9 +93,7 @@ class _AppRecipesViewState extends State<AppRecipesView> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        automaticallyImplyLeading: false,
-      ),
+      appBar: AppBar(automaticallyImplyLeading: false),
       body: Padding(
         padding: EdgeInsets.symmetric(horizontal: 8.0),
         child: Column(
@@ -111,28 +112,31 @@ class _AppRecipesViewState extends State<AppRecipesView> {
               ],
             ),
             Expanded(
-              child: _recipes.isEmpty
-              ? const Text("No recipes found...")
-              : ListView.builder(
-                itemCount: _recipes.length,
-                itemBuilder: (context, index) {
-                  final recipe = _recipes[index];
-                  return Card(
-                    child: ListTile(
-                      onTap: () => viewRecipe(context, recipe.id!),
-                      title: Text(recipe.name),
-                      titleTextStyle: Theme.of(context).textTheme.headlineMedium,
-                      subtitle: Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          StarRating(rating: recipe.rating.toDouble()),
-                          Text(recipe.cookingTime),
-                        ],
+              child:
+                  _recipes.isEmpty
+                      ? const Text("No recipes found...")
+                      : ListView.builder(
+                        itemCount: _recipes.length,
+                        itemBuilder: (context, index) {
+                          final recipe = _recipes[index];
+                          return Card(
+                            child: ListTile(
+                              onTap: () => viewRecipe(context, recipe.id!),
+                              title: Text(recipe.name),
+                              titleTextStyle:
+                                  Theme.of(context).textTheme.headlineMedium,
+                              subtitle: Row(
+                                mainAxisAlignment:
+                                    MainAxisAlignment.spaceBetween,
+                                children: [
+                                  StarRating(rating: recipe.rating.toDouble()),
+                                  Text(recipe.cookingTime),
+                                ],
+                              ),
+                            ),
+                          );
+                        },
                       ),
-                    ),
-                  );
-                },
-              ),
             ),
           ],
         ),
@@ -162,11 +166,13 @@ class _AppRecipeViewState extends State<AppRecipeView> {
 
   refresh() async {
     final model = await AppDatabase.getRecipeById(widget.id);
-    final ingredients = await AppDatabase.fetchRecipeIngredients(QueryOpts(
-      filtering: [
-        FilterField(field: RecipeIngredientFields.recipeId, value: widget.id)
-      ],
-    ));
+    final ingredients = await AppDatabase.fetchRecipeIngredients(
+      QueryOpts(
+        filtering: [
+          FilterField(field: RecipeIngredientFields.recipeId, value: widget.id),
+        ],
+      ),
+    );
     final measurements = await AppDatabase.fetchMeasurements();
     setState(() {
       _recipe = model;
@@ -179,7 +185,9 @@ class _AppRecipeViewState extends State<AppRecipeView> {
     await Navigator.push(
       context,
       MaterialPageRoute(
-        builder: (context) => AppRecipeIngredientEditView(id: id, recipeId: widget.id),
+        builder:
+            (context) =>
+                AppRecipeIngredientEditView(id: id, recipeId: widget.id),
       ),
     );
     refresh();
@@ -219,9 +227,7 @@ class _AppRecipeViewState extends State<AppRecipeView> {
             _recipe?.weekday.toString() ?? "",
             style: Theme.of(context).textTheme.bodyMedium,
           ),
-          StarRating(
-            rating: _recipe?.rating.toDouble() ?? 0.0,
-          ),
+          StarRating(rating: _recipe?.rating.toDouble() ?? 0.0),
           Text(
             _recipe?.frequency.toString() ?? "",
             style: Theme.of(context).textTheme.bodyMedium,
@@ -252,8 +258,9 @@ class _AppRecipeViewState extends State<AppRecipeView> {
                 itemCount: _ingredients.length,
                 itemBuilder: (context, index) {
                   final ingredient = _ingredients[index];
-                  final measurement = _measurements.firstWhere((element)
-                    => element.id == ingredient.measurementId);
+                  final measurement = _measurements.firstWhere(
+                    (element) => element.id == ingredient.measurementId,
+                  );
                   return Card(
                     child: ListTile(
                       onTap: () => editIngredient(ingredient.id!),
@@ -274,10 +281,13 @@ class _AppRecipeViewState extends State<AppRecipeView> {
         ],
       ),
       floatingActionButton: FloatingActionButton(
-        onPressed: () => Navigator.push(
-          context,
-          MaterialPageRoute(builder: (context) => AppRecipeEditView(id: _recipe!.id)),
-        ).then((value) => refresh()),
+        onPressed:
+            () => Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (context) => AppRecipeEditView(id: _recipe!.id),
+              ),
+            ).then((value) => refresh()),
         tooltip: "Edit",
         child: const Icon(CupertinoIcons.pencil),
       ),
@@ -287,22 +297,23 @@ class _AppRecipeViewState extends State<AppRecipeView> {
   Future openDeleteDialog(int id) {
     return showDialog(
       context: context,
-      builder: (context) => AlertDialog(
-        title: Text("Are you sure you want to remove this ingredient"),
-        actions: [
-          FilledButton(
-            onPressed: () {
-              deleteIngredient(id);
-              Navigator.of(context).pop();
-            },
-            child: Text("Delete"),
+      builder:
+          (context) => AlertDialog(
+            title: Text("Are you sure you want to remove this ingredient"),
+            actions: [
+              FilledButton(
+                onPressed: () {
+                  deleteIngredient(id);
+                  Navigator.of(context).pop();
+                },
+                child: Text("Delete"),
+              ),
+              TextButton(
+                onPressed: () => Navigator.of(context).pop(),
+                child: Text("Cancel"),
+              ),
+            ],
           ),
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(),
-            child: Text("Cancel"),
-          ),
-        ],
-      ),
     );
   }
 }
@@ -349,30 +360,31 @@ class _AppRecipeEditViewState extends State<AppRecipeEditView> {
   }
 
   saveChanges(context) async {
-    final RecipeModel model = _isNew
-      ? await AppDatabase.createRecipe(
-        name: _name,
-        description: _description,
-        cookingTime: _cookingTime,
-        mealTime: _mealTime,
-        weekday: _weekday,
-        rating: _rating,
-        frequency: _frequency,
-      )
-      : await AppDatabase.updateRecipe(
-        id: widget.id!,
-        name: _name,
-        description: _description,
-        cookingTime: _cookingTime,
-        mealTime: _mealTime,
-        weekday: _weekday,
-        rating: _rating,
-        frequency: _frequency,
-      );
+    final RecipeModel model =
+        _isNew
+            ? await AppDatabase.createRecipe(
+              name: _name,
+              description: _description,
+              cookingTime: _cookingTime,
+              mealTime: _mealTime,
+              weekday: _weekday,
+              rating: _rating,
+              frequency: _frequency,
+            )
+            : await AppDatabase.updateRecipe(
+              id: widget.id!,
+              name: _name,
+              description: _description,
+              cookingTime: _cookingTime,
+              mealTime: _mealTime,
+              weekday: _weekday,
+              rating: _rating,
+              frequency: _frequency,
+            );
     if (_isNew) {
       Navigator.pushReplacement(
-          context,
-          MaterialPageRoute(builder: (builder) => AppRecipeView(model.id!))
+        context,
+        MaterialPageRoute(builder: (builder) => AppRecipeView(model.id!)),
       );
     } else {
       Navigator.pop(context);
@@ -452,7 +464,8 @@ class _AppRecipeEditViewState extends State<AppRecipeEditView> {
                     size: 40.0,
                     rating: _rating.toDouble(),
                     allowHalfRating: false,
-                    onRatingChanged: (value) => setState(() => _rating = value.toInt()),
+                    onRatingChanged:
+                        (value) => setState(() => _rating = value.toInt()),
                   ),
                 ),
                 NumericStepButtonFormField(
@@ -470,7 +483,7 @@ class _AppRecipeEditViewState extends State<AppRecipeEditView> {
                 ),
                 SizedBox(height: 64.0 + 8.0),
               ],
-            )
+            ),
           ),
         ),
       ),
@@ -492,20 +505,19 @@ class AppRecipeIngredientEditView extends StatefulWidget {
   final int? id;
   final int? recipeId;
 
-  const AppRecipeIngredientEditView({
-    super.key,
-    this.recipeId,
-    this.id,
-  }) : assert(
-    id != null || id == null && recipeId != null,
-    "Either an id or recipe id must be provided"
-  );
+  const AppRecipeIngredientEditView({super.key, this.recipeId, this.id})
+    : assert(
+        id != null || id == null && recipeId != null,
+        "Either an id or recipe id must be provided",
+      );
 
   @override
-  State<AppRecipeIngredientEditView> createState() => _AppRecipeIngredientEditViewState();
+  State<AppRecipeIngredientEditView> createState() =>
+      _AppRecipeIngredientEditViewState();
 }
 
-class _AppRecipeIngredientEditViewState extends State<AppRecipeIngredientEditView> {
+class _AppRecipeIngredientEditViewState
+    extends State<AppRecipeIngredientEditView> {
   var _isNew = false;
   final _formKey = GlobalKey<FormState>();
 
@@ -524,7 +536,9 @@ class _AppRecipeIngredientEditViewState extends State<AppRecipeIngredientEditVie
     }
     final model = await AppDatabase.getRecipeIngredientById(widget.id!);
     final ingredient = await AppDatabase.getIngredientById(model.ingredientId);
-    final measurement = await AppDatabase.getMeasurementById(model.measurementId);
+    final measurement = await AppDatabase.getMeasurementById(
+      model.measurementId,
+    );
     setState(() {
       _ingredient = ingredient;
       _label = model.label;
@@ -535,21 +549,22 @@ class _AppRecipeIngredientEditViewState extends State<AppRecipeIngredientEditVie
   }
 
   saveChanges(context) async {
-    final _ = _isNew
-      ? await AppDatabase.createRecipeIngredient(
-        recipeId: widget.recipeId!,
-        ingredientId: _ingredient!.id!,
-        label: _label,
-        description: _description,
-        measurementId: _measurement!.id!,
-        measurementValue: double.parse(_measurementValue)
-      )
-      : await AppDatabase.updateRecipeIngredient(
-        id: widget.id!,
-        label: _label,
-        description: _description,
-        measurementValue: double.parse(_measurementValue)
-      );
+    final _ =
+        _isNew
+            ? await AppDatabase.createRecipeIngredient(
+              recipeId: widget.recipeId!,
+              ingredientId: _ingredient!.id!,
+              label: _label,
+              description: _description,
+              measurementId: _measurement!.id!,
+              measurementValue: double.parse(_measurementValue),
+            )
+            : await AppDatabase.updateRecipeIngredient(
+              id: widget.id!,
+              label: _label,
+              description: _description,
+              measurementValue: double.parse(_measurementValue),
+            );
     Navigator.pop(context);
   }
 
@@ -566,28 +581,29 @@ class _AppRecipeIngredientEditViewState extends State<AppRecipeIngredientEditVie
         actions: [
           PopupMenuButton<int>(
             onSelected: (value) {
-              switch(value) {
-                case 0: Navigator.push(
+              switch (value) {
+                case 0:
+                  Navigator.push(
                     context,
-                    MaterialPageRoute(builder: (context) => AppIngredientsView())
-                );
-                case 1: Navigator.push(
+                    MaterialPageRoute(
+                      builder: (context) => AppIngredientsView(),
+                    ),
+                  );
+                case 1:
+                  Navigator.push(
                     context,
-                    MaterialPageRoute(builder: (context) => AppMeasurementsView())
-                );
+                    MaterialPageRoute(
+                      builder: (context) => AppMeasurementsView(),
+                    ),
+                  );
               }
             },
-            itemBuilder: (context) => [
-              PopupMenuItem<int>(
-                value: 0,
-                child: Text("Ingredients"),
-              ),
-              PopupMenuItem<int>(
-                value: 1,
-                child: Text("Measurements"),
-              ),
-            ],
-          )
+            itemBuilder:
+                (context) => [
+                  PopupMenuItem<int>(value: 0, child: Text("Ingredients")),
+                  PopupMenuItem<int>(value: 1, child: Text("Measurements")),
+                ],
+          ),
         ],
       ),
       body: Padding(
@@ -597,31 +613,41 @@ class _AppRecipeIngredientEditViewState extends State<AppRecipeIngredientEditVie
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Row(children: [
-                Expanded(
-                  child: _isNew
-                  // TODO: Search
-                  ? DropdownSearch<IngredientModel>(
-                    items: (filter, loadProps) => AppDatabase.fetchIngredients(),
-                    selectedItem: _ingredient,
-                    compareFn: (item1, item2) => item1.id! == item2.id!,
-                    itemAsString: (item) => item.name,
-                    filterFn: (item, filter)
-                      => item.name.toLowerCase().contains(filter.toLowerCase()),
-                    decoratorProps: DropDownDecoratorProps(
-                      decoration: InputDecoration(labelText: "Ingredient")
-                    ),
-                    validator: (value) {
-                      if (value == null) {
-                        return "Please select an ingredient";
-                      }
-                      return null;
-                    },
-                    onSaved: (newValue) => _ingredient = newValue,
-                  )
-                  : Text(_ingredient!.name),
-                )
-              ]),
+              Row(
+                children: [
+                  Expanded(
+                    child:
+                        _isNew
+                            // TODO: Search
+                            ? DropdownSearch<IngredientModel>(
+                              items:
+                                  (filter, loadProps) =>
+                                      AppDatabase.fetchIngredients(),
+                              selectedItem: _ingredient,
+                              compareFn:
+                                  (item1, item2) => item1.id! == item2.id!,
+                              itemAsString: (item) => item.name,
+                              filterFn:
+                                  (item, filter) => item.name
+                                      .toLowerCase()
+                                      .contains(filter.toLowerCase()),
+                              decoratorProps: DropDownDecoratorProps(
+                                decoration: InputDecoration(
+                                  labelText: "Ingredient",
+                                ),
+                              ),
+                              validator: (value) {
+                                if (value == null) {
+                                  return "Please select an ingredient";
+                                }
+                                return null;
+                              },
+                              onSaved: (newValue) => _ingredient = newValue,
+                            )
+                            : Text(_ingredient!.name),
+                  ),
+                ],
+              ),
               TextFormField(
                 maxLength: 100,
                 decoration: InputDecoration(labelText: "Label"),
@@ -647,38 +673,48 @@ class _AppRecipeIngredientEditViewState extends State<AppRecipeIngredientEditVie
                 },
                 onSaved: (newValue) => _description = newValue!,
               ),
-              Row(children: [
-                Expanded(
-                  child: _isNew
-                  // TODO: Search
-                  ? DropdownSearch<MeasurementModel>(
-                    items: (filter, loadProps) => AppDatabase.fetchMeasurements(),
-                    selectedItem: _measurement,
-                    compareFn: (item1, item2) => item1.id! == item2.id!,
-                    itemAsString: (item) => item.label,
-                    filterFn: (item, filter) => item.label.contains(filter),
-                    decoratorProps: DropDownDecoratorProps(
-                        decoration: InputDecoration(labelText: "Measurement")
-                    ),
-                    validator: (value) {
-                      if (value == null) {
-                        return "Please select a measurement";
-                      }
-                      return null;
-                    },
-                    onSaved: (newValue) => _measurement = newValue,
-                  )
-                  : Text(_measurement!.label),
-                )
-              ]),
+              Row(
+                children: [
+                  Expanded(
+                    child:
+                        _isNew
+                            // TODO: Search
+                            ? DropdownSearch<MeasurementModel>(
+                              items:
+                                  (filter, loadProps) =>
+                                      AppDatabase.fetchMeasurements(),
+                              selectedItem: _measurement,
+                              compareFn:
+                                  (item1, item2) => item1.id! == item2.id!,
+                              itemAsString: (item) => item.label,
+                              filterFn:
+                                  (item, filter) => item.label.contains(filter),
+                              decoratorProps: DropDownDecoratorProps(
+                                decoration: InputDecoration(
+                                  labelText: "Measurement",
+                                ),
+                              ),
+                              validator: (value) {
+                                if (value == null) {
+                                  return "Please select a measurement";
+                                }
+                                return null;
+                              },
+                              onSaved: (newValue) => _measurement = newValue,
+                            )
+                            : Text(_measurement!.label),
+                  ),
+                ],
+              ),
               TextFormField(
                 keyboardType: TextInputType.numberWithOptions(
                   signed: false,
-                  decimal: true
+                  decimal: true,
                 ),
                 inputFormatters: [
                   TextInputFormatter.withFunction((oldValue, newValue) {
-                    if (newValue.text.isNotEmpty && double.tryParse(newValue.text) == null) {
+                    if (newValue.text.isNotEmpty &&
+                        double.tryParse(newValue.text) == null) {
                       return oldValue;
                     }
                     return newValue;

@@ -19,15 +19,17 @@ class RecipeIngredientModel {
     required this.measurementValue,
   });
 
-  factory RecipeIngredientModel.fromMap(Map<String, Object?> map) => RecipeIngredientModel(
-    id: map[RecipeIngredientFields.id] as int?,
-    recipeId: map[RecipeIngredientFields.recipeId] as int,
-    ingredientId: map[RecipeIngredientFields.ingredientId] as int,
-    label: map[RecipeIngredientFields.label] as String,
-    description: map[RecipeIngredientFields.description] as String,
-    measurementId: map[RecipeIngredientFields.measurementId] as int,
-    measurementValue: map[RecipeIngredientFields.measurementValue] as double,
-  );
+  factory RecipeIngredientModel.fromMap(Map<String, Object?> map) =>
+      RecipeIngredientModel(
+        id: map[RecipeIngredientFields.id] as int?,
+        recipeId: map[RecipeIngredientFields.recipeId] as int,
+        ingredientId: map[RecipeIngredientFields.ingredientId] as int,
+        label: map[RecipeIngredientFields.label] as String,
+        description: map[RecipeIngredientFields.description] as String,
+        measurementId: map[RecipeIngredientFields.measurementId] as int,
+        measurementValue:
+            map[RecipeIngredientFields.measurementValue] as double,
+      );
 
   Map<String, Object?> toMap() {
     return {

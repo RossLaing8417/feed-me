@@ -5,16 +5,22 @@ import 'package:feedme/database/schema/recipe.dart';
 class RecipeIngredientFields {
   /// Unique identifier
   static const id = "id";
+
   /// Owning recipe
   static const recipeId = "recipe_id";
+
   /// Ingredient type
   static const ingredientId = "ingredient_id";
+
   /// Ingredient label (e.g steak)
   static const label = "label";
+
   /// Ingredient description
   static const description = "description";
+
   /// Measurement type
   static const measurementId = "measurement_id";
+
   /// Measurement value
   static const measurementValue = "measurementValue";
 
@@ -38,17 +44,18 @@ class RecipeIngredientTable {
 
   static String onCreate(int version) {
     switch (version) {
-      case 1: return """
+      case 1:
+        return """
         CREATE TABLE $name (
           ${RecipeIngredientFields.id} $idType
         , ${RecipeIngredientFields.recipeId} $intType
         , ${RecipeIngredientFields.ingredientId} $intType
         , ${RecipeIngredientFields.label} $textType
         , ${RecipeIngredientFields.description} $textType
-        , ${RecipeIngredientFields.measurementId} $textType
+        , ${RecipeIngredientFields.measurementId} $intType
         , ${RecipeIngredientFields.measurementValue} $doubleType CHECK(${RecipeIngredientFields.measurementValue} >= 0.0)
-        , CONSTRAINT fk_${RecipeIngredientFields.recipeId     } FOREIGN KEY (${RecipeIngredientFields.recipeId     }) REFERENCES ${RecipeTable.name     } (${RecipeFields.id     }) ON DELETE RESTRICT
-        , CONSTRAINT fk_${RecipeIngredientFields.ingredientId } FOREIGN KEY (${RecipeIngredientFields.ingredientId }) REFERENCES ${IngredientTable.name } (${IngredientFields.id }) ON DELETE RESTRICT
+        , CONSTRAINT fk_${RecipeIngredientFields.recipeId} FOREIGN KEY (${RecipeIngredientFields.recipeId}) REFERENCES ${RecipeTable.name} (${RecipeFields.id}) ON DELETE RESTRICT
+        , CONSTRAINT fk_${RecipeIngredientFields.ingredientId} FOREIGN KEY (${RecipeIngredientFields.ingredientId}) REFERENCES ${IngredientTable.name} (${IngredientFields.id}) ON DELETE RESTRICT
         , CONSTRAINT fk_${RecipeIngredientFields.measurementId} FOREIGN KEY (${RecipeIngredientFields.measurementId}) REFERENCES ${MeasurementTable.name} (${MeasurementFields.id}) ON DELETE RESTRICT
         ) ;
       """;

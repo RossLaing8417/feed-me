@@ -95,19 +95,22 @@ class NumericStepButtonFormField extends FormField<int> {
     super.autovalidateMode,
     super.restorationId,
   }) : super(
-    builder: (field) => Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: [
-        InputDecorator(
-          decoration: (decoration ?? InputDecoration()).copyWith(errorText: field.errorText),
-          child: NumericStepButton(
-            initialValue: field.value,
-            minValue: minValue,
-            maxValue: maxValue,
-            onChanged: field.didChange,
-          ),
-        ),
-      ],
-    ),
-  );
+         builder:
+             (field) => Column(
+               crossAxisAlignment: CrossAxisAlignment.stretch,
+               children: [
+                 InputDecorator(
+                   decoration: (decoration ?? InputDecoration()).copyWith(
+                     errorText: field.errorText,
+                   ),
+                   child: NumericStepButton(
+                     initialValue: field.value,
+                     minValue: minValue,
+                     maxValue: maxValue,
+                     onChanged: field.didChange,
+                   ),
+                 ),
+               ],
+             ),
+       );
 }
