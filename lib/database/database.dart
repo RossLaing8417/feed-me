@@ -2,10 +2,12 @@ import 'dart:async';
 
 import 'package:feedme/core/weekday.dart';
 import 'package:feedme/database/models/ingredient.dart';
+import 'package:feedme/database/models/meal_plan.dart';
 import 'package:feedme/database/models/measurement.dart';
 import 'package:feedme/database/models/recipe.dart';
 import 'package:feedme/database/models/recipe_ingredient.dart';
 import 'package:feedme/database/schema/ingredient.dart';
+import 'package:feedme/database/schema/meal_plan.dart';
 import 'package:feedme/database/schema/measurement.dart';
 import 'package:feedme/database/schema/recipe.dart';
 import 'package:feedme/database/schema/recipe_ingredient.dart';
@@ -406,6 +408,88 @@ class AppDatabase {
     await (await db).delete(
       RecipeIngredientTable.name,
       where: "${RecipeIngredientFields.id} = ?",
+      whereArgs: [id],
+    );
+  }
+
+  static Future<List<MealPlanModel>> fetchMealPlans([
+    QueryOpts? queryOpts,
+  ]) async {
+    final records = await _fetchRecords(MealPlanTable.name, queryOpts);
+    return records.map((e) => MealPlanModel.fromMap(e)).toList();
+  }
+
+  static Future<MealPlanModel> getMealPlanById(int id) async {
+    return MealPlanModel.fromMap(
+      await _findRecord(MealPlanTable.name, MealPlanFields.id, id),
+    );
+  }
+
+  /// From [startDate] (inclusive) to [endDate] (exclusive)
+  static Future<List<MealPlanModel>> getMealPlansForRange(
+    DateTime startDate,
+    DateTime endDate,
+  ) async {
+    return fetchMealPlans(
+      QueryOpts(
+        filtering: [
+          FilterField(
+            field: MealPlanFields.mealDate,
+            operator: FilterField.ge,
+            value: startDate,
+          ),
+          FilterField(
+            field: MealPlanFields.mealDate,
+            operator: FilterField.le,
+            value: endDate,
+          ),
+        ],
+        sorting: [SortField(field: MealPlanFields.mealDate)],
+      ),
+    );
+  }
+
+  static Future<MealPlanModel> createMealPlan({
+    required int recipeId,
+    required DateTime mealDate,
+    required String notes,
+  }) async {
+    final model = MealPlanModel(
+      recipeId: recipeId,
+      mealDate: mealDate,
+      notes: notes,
+    );
+    final id = await (await db).insert(MealPlanTable.name, model.toMap());
+    return getMealPlanById(id);
+  }
+
+  static Future<MealPlanModel> updateMealPlan({
+    required int id,
+    required int recipeId,
+    required DateTime mealDate,
+    required String notes,
+  }) async {
+    var model = await getMealPlanById(id);
+    model = MealPlanModel(
+      id: model.id,
+      recipeId: recipeId,
+      mealDate: mealDate,
+      notes: notes,
+    );
+    await (await db).update(
+      MealPlanTable.name,
+      model.toMap(),
+      where: "${MealPlanFields.id} = ?",
+      whereArgs: [id],
+    );
+    return getMealPlanById(id);
+  }
+
+  static Future<void> deleteMealPlans({required int id}) async {
+    final _ = await getMealPlanById(id);
+    await (await db).delete(
+      MealPlanTable.name,
+      where: "${MealPlanFields.id} = ?",
       whereArgs: [id],
     );
   }
