@@ -43,17 +43,11 @@ class AppDatabase {
   }
 
   static Future _createDatabase(Database db, int version) async {
-    // final sql = """
-    //   ${IngredientTable.onCreate(version)}
-    //   ${MeasurementTable.onCreate(version)}
-    //   ${RecipeTable.onCreate(version)}
-    //   ${RecipeIngredientTable.onCreate(version)}
-    // """;
-    // await db.execute(sql);
     await db.execute(IngredientTable.onCreate(version));
     await db.execute(MeasurementTable.onCreate(version));
     await db.execute(RecipeTable.onCreate(version));
     await db.execute(RecipeIngredientTable.onCreate(version));
+    await db.execute(MealPlanTable.onCreate(version));
   }
 
   static Future<void> _upgradeDatabase(
@@ -66,13 +60,11 @@ class AppDatabase {
       "New version must be greater than old version",
     );
     for (var version = oldVersion + 1; oldVersion <= newVersion; version += 1) {
-      final sql = """
-        ${IngredientTable.onUpgrade(version)}
-        ${MeasurementTable.onUpgrade(version)}
-        ${RecipeTable.onUpgrade(version)}
-        ${RecipeIngredientTable.onUpgrade(version)}
-      """;
-      await db.execute(sql);
+      await db.execute(IngredientTable.onUpgrade(version));
+      await db.execute(MeasurementTable.onUpgrade(version));
+      await db.execute(RecipeTable.onUpgrade(version));
+      await db.execute(RecipeIngredientTable.onUpgrade(version));
+      await db.execute(MealPlanTable.onUpgrade(version));
     }
   }
 
@@ -98,19 +90,25 @@ class AppDatabase {
     final filterValues = <Object>[];
     for (final filter in opts.filtering) {
       filterQuery.add("${filter.field} ${filter.operator} ?");
-      filterValues.add(filter.value);
+      switch (filter.value) {
+        case DateTime v:
+          filterValues.add(v.microsecondsSinceEpoch);
+        default:
+          filterValues.add(filter.value);
+      }
     }
     final sortClause = opts.sorting.fold(
       "",
       (value, element) =>
-          "${value.isEmpty ? "" : ", "}${element.field} ${element.ascending ? "ASC" : "DESC"}",
+          "${value.isEmpty ? "" : "$value, "}${element.field} ${element.ascending ? "ASC" : "DESC"}",
     );
     final where =
         filterQuery.isEmpty
             ? null
             : filterQuery.fold(
               "",
-              (value, element) => "${value.isEmpty ? "" : " AND "} $element",
+              (value, element) =>
+                  "${value.isEmpty ? "" : "$value AND "} $element",
             );
     final whereArgs = filterValues.isEmpty ? null : filterValues;
     final orderBy = sortClause.isEmpty ? null : sortClause;
@@ -429,12 +427,25 @@ class FilterField {
 
   FilterField({required this.field, this.operator = "==", required this.value});
 
+  /// Equal
   static final eq = "==";
+
+  /// Not equal
   static final ne = "!=";
+
+  /// Greater than
   static final gt = ">";
+
+  /// Less than
   static final lt = "<";
+
+  /// Greater than or equal
   static final ge = ">=";
+
+  /// Less than or equal
   static final le = "<=";
+
+  /// SQL Like (i.e matches)
   static final like = "LIKE";
 }
 
