@@ -11,9 +11,6 @@ class RecipeFields {
   /// Approximate total time it takes to prepare and cook
   static const cookingTime = "cooking_time";
 
-  /// Times of day the recipe if for (breakfast, lunch, supper)
-  static const mealTime = "meal_time";
-
   /// Days of the week the recipe is for
   static const weekday = "week_day";
 
@@ -29,7 +26,6 @@ class RecipeFields {
     name,
     description,
     cookingTime,
-    mealTime,
     weekday,
     rating,
     frequency,
@@ -52,7 +48,6 @@ class RecipeTable {
         , ${RecipeFields.name} $textType
         , ${RecipeFields.description} $textType
         , ${RecipeFields.cookingTime} $textType
-        , ${RecipeFields.mealTime} $intType
         , ${RecipeFields.weekday} $intType
         , ${RecipeFields.rating} $intType
         , ${RecipeFields.frequency} $intType

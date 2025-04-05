@@ -1,6 +1,5 @@
 import 'dart:async';
 
-import 'package:feedme/core/mealtime.dart';
 import 'package:feedme/core/weekday.dart';
 import 'package:feedme/database/models/ingredient.dart';
 import 'package:feedme/database/models/measurement.dart';
@@ -286,7 +285,6 @@ class AppDatabase {
     required String name,
     required String description,
     required String cookingTime,
-    required MealTime mealTime,
     required Weekday weekday,
     required int rating,
     required int frequency,
@@ -295,7 +293,6 @@ class AppDatabase {
       name: name,
       description: description,
       cookingTime: cookingTime,
-      mealTime: mealTime,
       weekday: weekday,
       rating: rating,
       frequency: frequency,
@@ -309,7 +306,6 @@ class AppDatabase {
     required String name,
     required String description,
     required String cookingTime,
-    required MealTime mealTime,
     required Weekday weekday,
     required int rating,
     required int frequency,
@@ -320,7 +316,6 @@ class AppDatabase {
       name: name,
       description: description,
       cookingTime: cookingTime,
-      mealTime: mealTime,
       weekday: weekday,
       rating: rating,
       frequency: frequency,

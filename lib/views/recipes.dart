@@ -1,7 +1,6 @@
 import 'dart:async';
 
 import 'package:dropdown_search/dropdown_search.dart';
-import 'package:feedme/core/mealtime.dart';
 import 'package:feedme/core/weekday.dart';
 import 'package:feedme/database/database.dart';
 import 'package:feedme/database/models/ingredient.dart';
@@ -334,7 +333,6 @@ class _AppRecipeEditViewState extends State<AppRecipeEditView> {
   String _name = "";
   String _description = "";
   String _cookingTime = "";
-  final _mealTime = MealTime.supper;
   Weekday _weekday = Weekday.none;
   int _rating = 0;
   int _frequency = 0;
@@ -352,7 +350,6 @@ class _AppRecipeEditViewState extends State<AppRecipeEditView> {
       _name = model.name;
       _description = model.description;
       _cookingTime = model.cookingTime;
-      // _mealTime = model.mealTime;
       _weekday = model.weekday;
       _rating = model.rating;
       _frequency = model.frequency;
@@ -366,7 +363,6 @@ class _AppRecipeEditViewState extends State<AppRecipeEditView> {
               name: _name,
               description: _description,
               cookingTime: _cookingTime,
-              mealTime: _mealTime,
               weekday: _weekday,
               rating: _rating,
               frequency: _frequency,
@@ -376,7 +372,6 @@ class _AppRecipeEditViewState extends State<AppRecipeEditView> {
               name: _name,
               description: _description,
               cookingTime: _cookingTime,
-              mealTime: _mealTime,
               weekday: _weekday,
               rating: _rating,
               frequency: _frequency,
